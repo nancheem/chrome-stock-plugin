@@ -290,7 +290,20 @@ export default {
           itemWidth: 14,
           itemHeight: 8,
           textStyle: { color: this.defaultLabelColor, fontSize: 10 },
-          data: ["价格", "均价"],
+          data: [
+            {
+              name: "价格",
+              icon: "line",
+              itemStyle: { color: "#409eff" },
+              lineStyle: { color: "#409eff" },
+            },
+            {
+              name: "均价",
+              icon: "line",
+              itemStyle: { color: "#e6a23c" },
+              lineStyle: { color: "#e6a23c" },
+            },
+          ],
         },
         axisPointer: {
           link: { xAxisIndex: "all" },
@@ -485,6 +498,7 @@ export default {
             name: "价格",
             type: "line",
             data: [],
+            lineStyle: { color: "#409eff" },
             markLine: {
               silent: true,
               symbol: "none",
@@ -521,10 +535,8 @@ export default {
             symbol: "none",
             data: [],
             lineStyle: {
-              normal: {
-                width: 1,
-                color: "#e6a23c",
-              },
+              width: 1,
+              color: "#e6a23c",
             },
           },
           {
@@ -697,7 +709,12 @@ export default {
 
         this.option.series[0].markLine.data[0].yAxis = this.DWJZ;
 
-        let aa = this.handle_num(this.option.series[0].data);
+        let priceValues = [];
+        dataList.forEach((item) => {
+          priceValues.push(Number(item[1]));
+          priceValues.push(Number(item[4]));
+        });
+        let aa = this.handle_num(priceValues.filter((value) => Number.isFinite(value)));
 
         let minVal = this.DWJZ - this.DWJZ * aa;
         let maxVal = this.DWJZ + this.DWJZ * aa;

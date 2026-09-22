@@ -213,7 +213,7 @@ export default {
       loading: false,
       dragging: null,
       showAddSeciInput: false,
-      seciList: ["1.000001", "1.000300", "0.399001", "0.399006"],
+      seciList: ["1.000001", "0.399001", "0.399006", "100.NDX"],
       allSeciList: [
         {
           value: "1.000001",
@@ -464,7 +464,27 @@ export default {
           }
           this.darkMode = res.darkMode ? res.darkMode : false;
           this.normalFontSize = res.normalFontSize ? res.normalFontSize : false;
-          this.seciList = res.seciList ? res.seciList : this.seciList;
+          const defaultSeciList = [
+            "1.000001",
+            "0.399001",
+            "0.399006",
+            "100.NDX",
+          ];
+          const legacyDefaultSeciList = [
+            "1.000001",
+            "1.000300",
+            "0.399001",
+            "0.399006",
+          ];
+          const savedSeciList = Array.isArray(res.seciList) ? res.seciList : null;
+          const useDefaultSeciList =
+            !savedSeciList ||
+            (savedSeciList.length === legacyDefaultSeciList.length &&
+              savedSeciList.every((value, index) => value === legacyDefaultSeciList[index]));
+          this.seciList = useDefaultSeciList ? defaultSeciList : savedSeciList;
+          if (useDefaultSeciList) {
+            chrome.storage.sync.set({ seciList: this.seciList });
+          }
           this.showAmount = res.showAmount ? res.showAmount : false;
           this.showGains = res.showGains ? res.showGains : false;
           this.RealtimeFundcode = res.RealtimeFundcode;
