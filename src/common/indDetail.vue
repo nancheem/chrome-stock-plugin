@@ -45,6 +45,7 @@ import "./js/dark.js";
 
 require("echarts/lib/chart/line");
 require("echarts/lib/chart/candlestick");
+require("echarts/lib/chart/bar");
 
 require("echarts/lib/component/tooltip");
 require("echarts/lib/component/legend");
