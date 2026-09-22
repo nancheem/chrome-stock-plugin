@@ -30,6 +30,8 @@
             <el-switch
               v-model="isLiveUpdate"
               @change="changeOption($event, 'isLiveUpdate')"
+              active-text=""
+              inactive-text=""
             ></el-switch>
           </div>
           <p>开启后，首页会在交易时段自动刷新自选股票行情；分时、日、周、月、年 K 线可点击股票名称查看。</p>
@@ -51,41 +53,12 @@
             <input class="btn" type="button" value="导入导出文本" @click="openConfigBox" />
           </div>
           <p>配置文件包含自选股票、指数卡片和页面设置，可用于浏览器之间迁移或备份。</p>
-        </li>
-        <li>
-          <div class="list-title">关于插件</div>
-          <p style="line-height:34px">
-            当前插件版本：v{{ version }}
-            <input
-              class="btn"
-              type="button"
-              value="更新日志"
-              @click="changelog"
-            />
-            <input
-              class="btn"
-              type="button"
-              value="插件主页"
-              @click="openHomePage"
-            />
-          </p>
-          <p style="line-height:34px">
-            电报群：https://t.me/choose_funds_chat
-            <input class="btn" type="button" value="点击跳转" @click="openTG" />
-          </p>
-          <change-log
-            @close="closeChangelog"
-            :darkMode="darkMode"
-            ref="changelog"
-            :top="20"
-          ></change-log>
           <config-box
             @success="successInput"
             :darkMode="darkMode"
             ref="configBox"
             :top="40"
-          >
-          </config-box>
+          ></config-box>
         </li>
       </ul>
     </div>
@@ -93,12 +66,9 @@
 </template>
 
 <script>
-import changeLog from "../common/changeLog";
 import configBox from "../common/configBox";
-const { version } = require("../../package.json");
 export default {
   components: {
-    changeLog,
     configBox,
   },
   data() {
@@ -106,9 +76,7 @@ export default {
       configHref: null,
       darkMode: false,
       isLiveUpdate: false,
-      changelogShadow: false,
       normalFontSize: false,
-      version,
     };
   },
   mounted() {
@@ -123,13 +91,6 @@ export default {
     },
   },
   methods: {
-    changelog() {
-      this.changelogShadow = true;
-      this.$refs.changelog.init();
-    },
-    closeChangelog() {
-      this.changelogShadow = false;
-    },
     changeOption(val, type, sendMessage) {
       chrome.storage.sync.set(
         {
@@ -202,15 +163,6 @@ export default {
     openConfigBox() {
       this.$refs.configBox.init();
     },
-    openGithub() {
-      window.open("https://github.com/nancheem/chrome-stock-plugin");
-    },
-    openTG() {
-      window.open("https://t.me/choose_funds_chat");
-    },
-    openHomePage() {
-      window.open("https://github.com/nancheem/chrome-stock-plugin");
-    },
     changeDarkMode() {
       chrome.storage.sync.set({
         darkMode: this.darkMode,
@@ -264,13 +216,18 @@ export default {
 }
 
 .select-row {
+  display: flex;
+  align-items: center;
+  min-height: 35px;
   line-height: 35px;
   padding-left: 20px;
+  gap: 12px;
+  white-space: nowrap;
   & > span {
     display: inline-block;
-    width: 120px;
-    margin-right: 3px;
-    text-align: right;
+    width: 150px;
+    margin-right: 0;
+    text-align: left;
   }
   input,
   label {
