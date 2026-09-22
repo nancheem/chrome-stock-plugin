@@ -408,6 +408,12 @@ chrome.contextMenus.onClicked.addListener((info) => {
 });
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.type == "fetchJson") {
+    requestJson(request.url)
+      .then((result) => sendResponse({ ok: true, data: result.data }))
+      .catch((error) => sendResponse({ ok: false, error: error.message }));
+    return true;
+  }
   if (request.type == "DuringDate") {
     let DuringDate = isDuringDate();
     sendResponse({

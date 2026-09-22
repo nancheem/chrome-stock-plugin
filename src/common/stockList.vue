@@ -154,6 +154,23 @@ export default {
     openDetail(row) {
       this.$emit("open-detail", row);
     },
+    requestJson(url) {
+      return this.$axios.get(url).catch((error) => {
+        return new Promise((resolve, reject) => {
+          if (typeof chrome === "undefined" || !chrome.runtime || !chrome.runtime.sendMessage) {
+            reject(error);
+            return;
+          }
+          chrome.runtime.sendMessage({ type: "fetchJson", url: url }, (response) => {
+            if (chrome.runtime.lastError || !response || !response.ok) {
+              reject(error);
+              return;
+            }
+            resolve({ data: response.data });
+          });
+        });
+      });
+    },
     refresh() {
       var items = this.stockItems();
       if (!items.length) {
@@ -167,7 +184,7 @@ export default {
         market: item.instrumentId.split(".")[1],
         symbol: item.instrumentId.split(".")[2],
       });
-      this.$axios.get(stockMarket.buildQuoteUrl(instruments)).then((response) => {
+      this.requestJson(stockMarket.buildQuoteUrl(instruments)).then((response) => {
         var diff = response.data && response.data.data && response.data.data.diff || [];
         var quotes = diff.map((item) => stockMarket.markStale(stockMarket.normalizeQuote(item), new Date(), 120000));
         this.rows = instruments.map((instrument) => ({

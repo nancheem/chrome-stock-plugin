@@ -472,13 +472,30 @@ export default {
         this.getKlineData();
       }
     },
+    requestJson(url) {
+      return this.$axios.get(url).catch((error) => {
+        return new Promise((resolve, reject) => {
+          if (typeof chrome === "undefined" || !chrome.runtime || !chrome.runtime.sendMessage) {
+            reject(error);
+            return;
+          }
+          chrome.runtime.sendMessage({ type: "fetchJson", url: url }, (response) => {
+            if (chrome.runtime.lastError || !response || !response.ok) {
+              reject(error);
+              return;
+            }
+            resolve({ data: response.data });
+          });
+        });
+      });
+    },
     getIntradayData() {
       this.loading = true;
       this.errorMessage = "";
       this.dataList = [];
       let url = `https://push2.eastmoney.com/api/qt/stock/trends2/get?secid=${this.code}&fields1=f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11,f12,f13&fields2=f51,f53,f56,f58&iscr=0&iscca=0&ndays=1&forcect=1`;
 
-      this.$axios.get(url).then((res) => {
+      this.requestJson(url).then((res) => {
         var payload = res.data && res.data.data;
         if (!payload || !Array.isArray(payload.trends) || !payload.trends.length) {
           throw new Error("empty intraday data");
@@ -565,8 +582,7 @@ export default {
       };
       var klt = periodMap[this.chartPeriod];
       var url = `https://push2his.eastmoney.com/api/qt/stock/kline/get?secid=${this.code}&fields1=f1,f2,f3,f4,f5,f6&fields2=f51,f52,f53,f54,f55,f56,f57,f58,f59,f60&klt=${klt}&fqt=1&beg=0&end=20500101&lmt=1000`;
-      this.$axios
-        .get(url)
+      this.requestJson(url)
         .then((res) => {
           var klines = res.data && res.data.data && res.data.data.klines;
           if (!klines || !klines.length) {
@@ -765,6 +781,8 @@ export default {
 }
 
 .content-box {
+  width: 100%;
+  box-sizing: border-box;
   background: #ffffff;
   border-radius: 15px;
   padding: 0 10px;
