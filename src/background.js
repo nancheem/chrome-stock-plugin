@@ -1,5 +1,6 @@
 var Interval;
 var holiday;
+var marketRequest = require("./domain/marketRequest");
 var RealtimeFundcode = null;
 var RealtimeIndcode = null;
 var fundListM = [];
@@ -11,12 +12,94 @@ var userId = null;
 // MV3 uses chrome.action in place of the removed browserAction namespace.
 var actionApi = chrome.action || chrome.browserAction;
 
-var requestJson = url => fetch(url).then(response => {
-  if (!response.ok) {
-    throw new Error("Request failed: " + response.status);
+var MARKET_REQUEST_TIMEOUT = 10000;
+var MARKET_REQUEST_RETRIES = 2;
+
+var wait = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
+
+var fetchJsonOnce = (url, timeout) => {
+  var controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+  var timer = null;
+  var options = {
+    cache: "no-store",
+    headers: {
+      Accept: "*/*",
+      "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+    },
+    referrer: "https://quote.eastmoney.com/",
+    referrerPolicy: "strict-origin-when-cross-origin",
+  };
+  if (controller) {
+    options.signal = controller.signal;
+    timer = setTimeout(() => controller.abort(), timeout);
   }
-  return response.json().then(data => ({ data }));
-});
+
+  return fetch(url, options)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error("HTTP " + response.status);
+      }
+      return response.text();
+    })
+    .then(text => {
+      var data;
+      try {
+        data = JSON.parse(text);
+      } catch (error) {
+        throw new Error("响应不是有效 JSON");
+      }
+      marketRequest.validateResponse(url, data);
+      return { data: data };
+    })
+    .then(result => {
+      if (timer) clearTimeout(timer);
+      return result;
+    })
+    .catch(error => {
+      if (timer) clearTimeout(timer);
+      if (error && error.name === "AbortError") {
+        throw new Error("请求超时（" + timeout + "ms）");
+      }
+      throw error;
+    });
+};
+
+var requestJson = (url, options) => {
+  var timeout = options && options.timeout ? options.timeout : MARKET_REQUEST_TIMEOUT;
+  var retries = options && options.retries ? options.retries : MARKET_REQUEST_RETRIES;
+  var candidates = marketRequest.getRequestCandidates(url);
+  var errors = [];
+  var candidateIndex = 0;
+  var attempt = 0;
+
+  var requestNext = () => {
+    if (candidateIndex >= candidates.length) {
+      throw new Error("行情请求失败：" + errors.join("；"));
+    }
+    var target = candidates[candidateIndex];
+    attempt += 1;
+    return fetchJsonOnce(target, timeout).then(result => {
+      result.source = target;
+      return result;
+    }).catch(error => {
+      var host;
+      try {
+        host = new URL(target).host;
+      } catch (ignored) {
+        host = target;
+      }
+      errors.push(host + "：" + (error && error.message ? error.message : "未知错误"));
+      if (attempt < retries) {
+        return wait(300 * attempt).then(requestNext);
+      }
+      candidateIndex += 1;
+      attempt = 0;
+      return requestNext();
+    });
+  };
+
+  return Promise.resolve().then(requestNext);
+};
 
 var getGuid = () => {
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (
@@ -410,7 +493,7 @@ chrome.contextMenus.onClicked.addListener((info) => {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type == "fetchJson") {
     requestJson(request.url)
-      .then((result) => sendResponse({ ok: true, data: result.data }))
+      .then((result) => sendResponse({ ok: true, data: result.data, source: result.source }))
       .catch((error) => sendResponse({ ok: false, error: error.message }));
     return true;
   }
