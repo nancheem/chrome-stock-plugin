@@ -6,7 +6,12 @@
     :class="containerClass"
     :style="[zoom, grayscale, opacity]"
   >
-    <div>
+    <div class="asset-mode-bar">
+      <input class="btn" :class="assetMode === 'stock' ? 'primary' : ''" type="button" value="股票" @click="switchAssetMode('stock')" />
+      <input class="btn" :class="assetMode === 'fund' ? 'primary' : ''" type="button" value="基金" @click="switchAssetMode('fund')" />
+    </div>
+    <stock-list v-if="assetMode === 'stock'" :darkMode="darkMode"></stock-list>
+    <div v-if="assetMode === 'fund'">
       <div
         class="tab-row"
         v-if="isGetStorage"
@@ -480,6 +485,7 @@
       :top="30"
     ></change-log>
   </div>
+  </div>
 </template>
 
 <script>
@@ -489,6 +495,7 @@ import indDetail from "../common/indDetail";
 import fundDetail from "../common/fundDetail";
 import changeLog from "../common/changeLog";
 import market from "../common/market";
+import stockList from "../common/stockList";
 //防抖
 let timeout = null;
 function debounce(fn, wait = 700) {
@@ -503,10 +510,12 @@ export default {
     indDetail,
     changeLog,
     market,
+    stockList,
   },
   data() {
     return {
       isEdit: false,
+      assetMode: "stock",
       fundcode: "",
       isAdd: false,
       indFundData: [],
@@ -730,6 +739,17 @@ export default {
         this.isRefresh = false;
       }, 1500);
     },
+    switchAssetMode(mode) {
+      this.assetMode = mode === "fund" ? "fund" : "stock";
+      chrome.storage.sync.set({ assetMode: this.assetMode }, () => {
+        if (this.assetMode === "fund") {
+          this.init();
+        } else {
+          clearInterval(this.myVar);
+          clearInterval(this.myVar1);
+        }
+      });
+    },
     formatTooltip(val) {
       return val + "%";
     },
@@ -772,6 +792,7 @@ export default {
           "grayscaleValue",
           "opacityValue",
           "sortTypeObj",
+          "assetMode",
         ],
         (res) => {
           this.fundList = res.fundList ? res.fundList : this.fundList;
@@ -813,6 +834,13 @@ export default {
           this.grayscaleValue = res.grayscaleValue ? res.grayscaleValue : 0;
           this.opacityValue = res.opacityValue ? res.opacityValue : 0;
           this.sortTypeObj = res.sortTypeObj ? res.sortTypeObj : {};
+          this.assetMode = res.assetMode
+            ? res.assetMode === "fund"
+              ? "fund"
+              : "stock"
+            : res.fundListM
+            ? "fund"
+            : "stock";
 
           if (this.seciList.length > 0) {
             this.loadingInd = true;
@@ -826,9 +854,11 @@ export default {
           };
 
           this.isGetStorage = true;
-          this.getIndFundData();
-          this.getData();
-          this.checkInterval(true);
+          if (this.assetMode === "fund") {
+            this.getIndFundData();
+            this.getData();
+            this.checkInterval(true);
+          }
 
           let ver = res.version ? res.version : "1.0.0";
           if (ver != this.localVersion) {
@@ -1352,6 +1382,11 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.asset-mode-bar {
+  padding-bottom: 6px;
+  text-align: right;
+}
+
 .container {
   min-width: 400px;
   min-height: 150px;
