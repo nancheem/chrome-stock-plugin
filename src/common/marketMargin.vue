@@ -92,6 +92,10 @@ export default {
             average20: average20,
           };
           this.renderChart(points);
+          this.$nextTick(() => {
+            this.resizeChart();
+            setTimeout(this.resizeChart, 60);
+          });
         })
         .catch((error) => {
           this.errorMessage = "行情加载失败：" + (error && error.message ? error.message : "请检查网络后重试");
@@ -102,6 +106,8 @@ export default {
       var dates = points.map((item) => item.date);
       var financing = points.map((item) => item.financing / 100000000);
       var short = points.map((item) => item.short / 100000000);
+      var financingRange = this.axisRange(financing);
+      var shortRange = this.axisRange(short);
       this.myChart.setOption({
         animation: false,
         color: ["#1687c9", "#e39b3b"],
@@ -122,14 +128,21 @@ export default {
           splitLine: { show: false },
         },
         yAxis: [
-          { type: "value", name: "融资余额", position: "left", scale: true, nameTextStyle: { color: this.textColor, fontSize: 11 }, axisLabel: { color: this.textColor, fontSize: 10, formatter: "{value}亿" }, axisLine: { show: true, lineStyle: { color: "#1687c9" } }, splitLine: { lineStyle: { color: this.splitColor } } },
-          { type: "value", name: "融券余额", position: "right", scale: true, nameTextStyle: { color: this.textColor, fontSize: 11 }, axisLabel: { color: this.textColor, fontSize: 10, formatter: "{value}亿" }, axisLine: { show: true, lineStyle: { color: "#e39b3b" } }, splitLine: { show: false } },
+          { type: "value", min: financingRange.min, max: financingRange.max, splitNumber: 4, position: "left", scale: true, axisLabel: { color: this.textColor, fontSize: 10, hideOverlap: true, formatter: (value) => Number(value).toFixed(0) + "亿" }, axisLine: { show: true, lineStyle: { color: "#1687c9" } }, splitLine: { lineStyle: { color: this.splitColor } } },
+          { type: "value", min: shortRange.min, max: shortRange.max, splitNumber: 4, position: "right", scale: true, axisLabel: { color: this.textColor, fontSize: 10, hideOverlap: true, formatter: (value) => Number(value).toFixed(0) + "亿" }, axisLine: { show: true, lineStyle: { color: "#e39b3b" } }, splitLine: { show: false } },
         ],
         series: [
           { name: "融资余额", type: "line", yAxisIndex: 0, data: financing, smooth: true, showSymbol: false, lineStyle: { width: 2 } },
           { name: "融券余额", type: "line", yAxisIndex: 1, data: short, smooth: true, showSymbol: false, lineStyle: { width: 2 } },
         ],
       }, true);
+    },
+    axisRange(values) {
+      var min = Math.min.apply(null, values);
+      var max = Math.max.apply(null, values);
+      var padding = (max - min) * 0.12;
+      if (!isFinite(padding) || padding === 0) padding = Math.max(Math.abs(max) * 0.02, 1);
+      return { min: Math.max(0, min - padding), max: max + padding };
     },
     formatYi(value) { return (Number(value || 0) / 100000000).toFixed(2); },
     formatChange(change, rate) {
@@ -141,9 +154,9 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.box { width: 100%; min-height: 286px; }
+.box { width: 100%; min-height: 0; }
 .margin-summary { text-align: left; color: #606266; font-size: 12px; line-height: 20px; padding: 4px 8px 0; strong { margin: 0 3px; color: #303133; } .up { color: #f56c6c; } .down { color: #4eb61b; } }
-.main-echarts { width: 100%; height: 224px; }
+.main-echarts { display: block; width: 100%; height: 224px; }
 .update-time { color: #909399; text-align: right; font-size: 11px; padding: 0 8px 3px; }
 .state-message { min-height: 250px; display: flex; align-items: center; justify-content: center; gap: 8px; color: #909399; font-size: 12px; }
 .retry-btn { cursor: pointer; background: #fff; border: 1px solid #dcdfe6; border-radius: 3px; color: #303133; font-size: 12px; padding: 4px 8px; }
