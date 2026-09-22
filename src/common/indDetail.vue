@@ -484,7 +484,7 @@ export default {
           });
         });
       }
-      return this.$axios.get(url);
+      return this.$axios.get(url, { withCredentials: true });
     },
     getIntradayData() {
       this.loading = true;

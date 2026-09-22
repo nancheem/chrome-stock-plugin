@@ -166,7 +166,7 @@ export default {
           });
         });
       }
-      return this.$axios.get(url);
+      return this.$axios.get(url, { withCredentials: true });
     },
     refresh() {
       var items = this.stockItems();

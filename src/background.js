@@ -22,9 +22,12 @@ var fetchJsonOnce = (url, timeout) => {
   var timer = null;
   var options = {
     cache: "no-store",
+    credentials: "include",
     headers: {
       Accept: "*/*",
       "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+      "Cache-Control": "no-cache",
+      Pragma: "no-cache",
     },
     referrer: "https://quote.eastmoney.com/",
     referrerPolicy: "strict-origin-when-cross-origin",
