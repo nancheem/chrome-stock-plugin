@@ -15,6 +15,9 @@
         <el-tab-pane lazy label="南向资金" name="fourth">
           <market-N2S :darkMode="darkMode" ref="fourth"></market-N2S>
         </el-tab-pane>
+        <el-tab-pane lazy label="融资融券" name="fifth">
+          <market-margin :darkMode="darkMode" ref="fifth"></market-margin>
+        </el-tab-pane>
       </el-tabs>
 
       <div class="tab-row">
@@ -29,6 +32,7 @@ import marketLine from "./marketLine";
 import marketBar from "./marketBar";
 import marketS2N from "./marketS2N";
 import marketN2S from "./marketN2S";
+import marketMargin from "./marketMargin";
 // import charts2 from "./charts2";
 export default {
   components: {
@@ -36,6 +40,7 @@ export default {
     marketBar,
     marketS2N,
     marketN2S,
+    marketMargin,
   },
   name: "market",
   props: {
