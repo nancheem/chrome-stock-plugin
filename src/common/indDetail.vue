@@ -216,7 +216,7 @@ export default {
           {
             type: "inside",
             xAxisIndex: [0, 1],
-            filterMode: "none",
+            filterMode: "filter",
             start: 0,
             end: 100,
             zoomOnMouseWheel: true,
@@ -225,7 +225,7 @@ export default {
           {
             type: "slider",
             xAxisIndex: [0, 1],
-            filterMode: "none",
+            filterMode: "filter",
             start: 0,
             end: 100,
             bottom: 0,
@@ -796,7 +796,7 @@ export default {
           {
             type: "inside",
             xAxisIndex: [0, 1],
-            filterMode: "none",
+            filterMode: "filter",
             start: this.chartPeriod === "day" && dataList.length > 30
               ? ((dataList.length - 30) / dataList.length) * 100
               : 0,
@@ -807,7 +807,7 @@ export default {
           {
             type: "slider",
             xAxisIndex: [0, 1],
-            filterMode: "none",
+            filterMode: "filter",
             start: this.chartPeriod === "day" && dataList.length > 30
               ? ((dataList.length - 30) / dataList.length) * 100
               : 0,
