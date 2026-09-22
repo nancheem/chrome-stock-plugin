@@ -1055,7 +1055,8 @@ export default {
 }
 
 .more-width {
-  min-width: 785px;
+  min-width: 640px;
+  max-width: 680px;
 }
 
 .table-more-height {

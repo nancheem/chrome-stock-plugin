@@ -6,10 +6,23 @@
         v-model="inputCode"
         class="btn stock-input"
         type="text"
-        placeholder="请输入股票代码，如 000001 或 SZ.000001"
-        @keyup.enter="addStock"
+        placeholder="输入股票名称或代码，如 长江电力 / 000001"
+        @keyup.enter="searchOrAdd"
       />
-      <input class="btn" type="button" value="确定" @click="addStock" />
+      <input class="btn" type="button" value="搜索" @click="searchOrAdd" />
+      <div v-if="searchResults.length" class="search-results">
+        <button
+          v-for="item in searchResults"
+          :key="item.id"
+          type="button"
+          class="search-result"
+          @click="addSearchResult(item)"
+        >
+          <span>{{ item.name }}</span>
+          <small>{{ item.market }}.{{ item.symbol }}</small>
+        </button>
+      </div>
+      <span v-if="searching" class="searching">搜索中...</span>
     </div>
     <div class="table-row" style="min-height:160px">
     <table class="stock-table">
@@ -60,6 +73,8 @@ export default {
   data() {
     return {
       inputCode: "",
+      searchResults: [],
+      searching: false,
       rows: [],
       config: null,
       loading: false,
@@ -125,6 +140,42 @@ export default {
         this.$message.error(error.message);
         return;
       }
+      this.addInstrument(instrument);
+    },
+    searchOrAdd() {
+      var value = String(this.inputCode || "").trim();
+      if (!value) {
+        this.$message.warning("请输入股票名称或代码");
+        return;
+      }
+      if (/^(?:SH|SZ)[.:]\d{6}$/i.test(value) || /^\d{6}$/.test(value)) {
+        this.addStock();
+        return;
+      }
+      this.searchStocks(value);
+    },
+    searchStocks(query) {
+      this.searching = true;
+      this.searchResults = [];
+      this.requestJson(stockMarket.buildSearchUrl(query)).then((response) => {
+        var table = response.data && response.data.QuotationCodeTable;
+        var data = table && Array.isArray(table.Data) ? table.Data : [];
+        this.searchResults = data
+          .filter((item) => item.Classify === "AStock" && /^\d{6}$/.test(String(item.Code || "")))
+          .map((item) => stockMarket.normalizeSearchResult(item));
+        if (!this.searchResults.length) {
+          this.$message.info("没有找到匹配的沪深股票");
+        }
+      }).catch((error) => {
+        this.$message.error(error && error.message ? error.message : "股票搜索失败");
+      }).then(() => {
+        this.searching = false;
+      });
+    },
+    addSearchResult(instrument) {
+      this.addInstrument(instrument);
+    },
+    addInstrument(instrument) {
       var items = this.stockItems();
       if (items.some((item) => item.instrumentId === instrument.id)) {
         this.$message.info("这只股票已经在列表中");
@@ -143,6 +194,7 @@ export default {
         transactions: [],
       });
       this.inputCode = "";
+      this.searchResults = [];
       this.saveConfig(() => this.refresh());
     },
     removeStock(id) {
@@ -207,9 +259,14 @@ export default {
 
 <style lang="scss" scoped>
 .stock-list { padding: 0; }
-.input-row { text-align: center; margin-top: 10px; }
+.input-row { text-align: center; margin-top: 10px; position: relative; }
 .table-row { max-height: 425px; min-height: 160px; overflow-y: auto; }
-.stock-input { width: 270px; }
+.stock-input { width: 250px; }
+.search-results { position: absolute; z-index: 5; left: 50%; transform: translateX(-50%); top: 31px; width: 330px; max-height: 180px; overflow-y: auto; padding: 3px 0; background: #fff; border: 1px solid #dcdfe6; border-radius: 3px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12); text-align: left; }
+.search-result { display: flex; align-items: center; justify-content: space-between; width: 100%; border: 0; background: transparent; cursor: pointer; padding: 7px 10px; color: #303133; font-size: 12px; text-align: left; }
+.search-result:hover { background: #f5fafe; }
+.search-result small { color: #909399; }
+.searching { color: #909399; font-size: 12px; }
 .stock-table { width: 100%; border-collapse: collapse; }
 .stock-table th { padding: 8px 6px; }
 .stock-table td { padding: 6px 6px 5px; }
@@ -224,4 +281,7 @@ export default {
 .down { color: #4eb61b; font-weight: bold; }
 .empty { margin: 0; text-align: center; padding: 30px 0; color: #909399; }
 .darkMode .stock-table tr:nth-child(even) { background: rgba(255, 255, 255, 0.05); }
+.darkMode .search-results { background: #373737; border-color: rgba(255, 255, 255, 0.37); }
+.darkMode .search-result { color: rgba(255, 255, 255, 0.85); }
+.darkMode .search-result:hover { background: rgba(255, 255, 255, 0.12); }
 </style>

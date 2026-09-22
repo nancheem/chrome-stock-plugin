@@ -23,13 +23,16 @@ function buildSearchUrl(query) {
 
 function normalizeSearchResult(raw) {
   raw = raw || {};
-  var market = marketCode(raw.MARKET || raw.f13 || raw.MARKET_TYPE);
+  var market = marketCode(
+    raw.MktNum || raw.MARKET || raw.Market || raw.f13 || raw.MARKET_TYPE || raw.MarketType
+  );
+  var symbol = String(raw.CODE || raw.Code || raw.f12 || raw.UnifiedCode || "");
   return {
-    id: "STOCK." + (market === "1" ? "SH" : "SZ") + "." + String(raw.CODE || raw.f12 || ""),
+    id: "STOCK." + (market === "1" ? "SH" : "SZ") + "." + symbol,
     assetType: portfolio.ASSET_TYPES.STOCK,
     market: market === "1" ? "SH" : "SZ",
-    symbol: String(raw.CODE || raw.f12 || ""),
-    name: raw.NAME || raw.f14 || "",
+    symbol: symbol,
+    name: raw.NAME || raw.Name || raw.f14 || "",
   };
 }
 
