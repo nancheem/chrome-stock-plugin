@@ -55,6 +55,7 @@ var quote = stockMarket.normalizeQuote({
 assert.strictEqual(stockMarket.toSecid({ market: "SZ", symbol: "000001", assetType: "STOCK" }), "0.000001");
 assert.ok(stockMarket.buildSearchUrl("平安银行").indexOf(encodeURIComponent("平安银行")) !== -1);
 assert.ok(stockMarket.buildIntradayUrl({ market: "SZ", symbol: "000001", assetType: "STOCK" }).indexOf("secid=0.000001") !== -1);
+assert.ok(stockMarket.buildKlineUrl({ market: "SH", symbol: "600000", assetType: "STOCK" }, "102").indexOf("klt=102") !== -1);
 assert.strictEqual(quote.instrumentId, "STOCK.SZ.000001");
 assert.strictEqual(quote.last, 12.35);
 assert.strictEqual(quote.prevClose, 12.1);

@@ -2,6 +2,15 @@
   <div v-if="boxShadow" class="shadow" :class="boxClass">
     <div class="content-box">
       <h5>{{ codeData.f14 }}({{ codeData.f13 + "." + codeData.f12 }})</h5>
+      <div class="chart-tabs">
+        <el-radio-group v-model="chartPeriod" size="mini" @change="changeChartPeriod">
+          <el-radio-button label="intraday">分时</el-radio-button>
+          <el-radio-button label="day">日</el-radio-button>
+          <el-radio-button label="week">周</el-radio-button>
+          <el-radio-button label="month">月</el-radio-button>
+          <el-radio-button label="year">年</el-radio-button>
+        </el-radio-group>
+      </div>
       <div
         v-loading="loading"
         :element-loading-background="
@@ -26,6 +35,7 @@ import "./js/customed.js";
 import "./js/dark.js";
 
 require("echarts/lib/chart/line");
+require("echarts/lib/chart/candlestick");
 
 require("echarts/lib/component/tooltip");
 require("echarts/lib/component/legend");
@@ -58,6 +68,7 @@ export default {
       dataList: [],
       timeData: [],
       isHK: false,
+      chartPeriod: "intraday",
     };
   },
   watch: {},
@@ -82,8 +93,10 @@ export default {
   mounted() {
     // this.init();
   },
-   beforeDestroy() {
-    this.myChart.clear();
+  beforeDestroy() {
+    if (this.myChart) {
+      this.myChart.clear();
+    }
   },
   methods: {
     formatNum(val) {
@@ -93,6 +106,7 @@ export default {
       this.boxShadow = true;
       this.code = val.f13 + "." + val.f12;
       this.codeData = val;
+      this.chartPeriod = "intraday";
 
       setTimeout(() => {
         this.initChart();
@@ -100,6 +114,9 @@ export default {
     },
     initChart() {
       this.chartEL = this.$refs.mainCharts;
+      if (this.myChart) {
+        this.myChart.dispose();
+      }
       this.myChart = echarts.init(
         this.chartEL,
         this.darkMode ? "dark" : "customed"
@@ -365,6 +382,11 @@ export default {
       this.boxShadow = false;
       this.$emit("close", false);
     },
+    changeChartPeriod() {
+      if (this.myChart) {
+        this.initChart();
+      }
+    },
     fmtAxis(val, ind) {
       if (this.isHK) {
         if (val == "12:00") {
@@ -419,6 +441,13 @@ export default {
       return _aa > _bb ? _aa : _bb;
     },
     getData() {
+      if (this.chartPeriod === "intraday") {
+        this.getIntradayData();
+      } else {
+        this.getKlineData();
+      }
+    },
+    getIntradayData() {
       this.loading = true;
       let url = `https://push2.eastmoney.com/api/qt/stock/trends2/get?secid=${this.code}&fields1=f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11,f12,f13&fields2=f51,f53,f56,f58&iscr=0&iscca=0&ndays=1&forcect=1`;
 
@@ -490,6 +519,132 @@ export default {
         this.option.yAxis[1].interval = Math.abs((this.DWJZ - minVal) / 4);
         this.myChart.setOption(this.option);
       });
+    },
+    getKlineData() {
+      this.loading = true;
+      var periodMap = {
+        day: "101",
+        week: "102",
+        month: "103",
+        year: "106",
+      };
+      var klt = periodMap[this.chartPeriod];
+      var url = `https://push2his.eastmoney.com/api/qt/stock/kline/get?secid=${this.code}&fields1=f1,f2,f3,f4,f5,f6&fields2=f51,f52,f53,f54,f55,f56,f57,f58,f59,f60&klt=${klt}&fqt=1&beg=0&end=20500101&lmt=1000`;
+      this.$axios
+        .get(url)
+        .then((res) => {
+          var klines = res.data && res.data.data && res.data.data.klines;
+          if (!klines || !klines.length) {
+            this.dataList = [];
+            this.myChart.clear();
+            return;
+          }
+          var pointLimit = {
+            day: 500,
+            week: 520,
+            month: 240,
+            year: 80,
+          }[this.chartPeriod];
+          if (pointLimit && klines.length > pointLimit) {
+            klines = klines.slice(-pointLimit);
+          }
+          this.renderKline(klines.map((item) => item.split(",")));
+        })
+        .catch(() => {
+          this.dataList = [];
+          this.myChart.clear();
+        })
+        .then(() => {
+          this.loading = false;
+        });
+    },
+    renderKline(dataList) {
+      this.dataList = dataList;
+      var dates = dataList.map((item) => item[0]);
+      var candleData = dataList.map((item) => [
+        +item[1],
+        +item[2],
+        +item[4],
+        +item[3],
+      ]);
+      var volumeData = dataList.map((item) => ({
+        value: +item[5],
+        itemStyle: {
+          color: +item[2] >= +item[1] ? "#f56c6c" : "#4eb61b",
+        },
+      }));
+      this.option = {
+        animation: false,
+        tooltip: {
+          trigger: "axis",
+          axisPointer: { type: "cross" },
+          formatter: (params) => {
+            var index = params[0].dataIndex;
+            var item = dataList[index];
+            return `日期：${item[0]}<br />开盘：${item[1]}<br />收盘：${item[2]}<br />最高：${item[3]}<br />最低：${item[4]}<br />涨跌幅：${item[8]}%<br />成交量：${this.formatNum(item[5])}`;
+          },
+        },
+        grid: [
+          { top: 20, left: 60, right: 55, height: "55%" },
+          { left: 60, right: 55, top: "70%", height: "20%" },
+        ],
+        xAxis: [
+          {
+            type: "category",
+            data: dates,
+            boundaryGap: true,
+            axisLine: { onZero: false },
+          },
+          {
+            type: "category",
+            gridIndex: 1,
+            data: dates,
+            boundaryGap: true,
+            axisLabel: { show: false },
+          },
+        ],
+        yAxis: [
+          {
+            scale: true,
+            axisLabel: { color: this.defaultLabelColor },
+            splitLine: {
+              show: true,
+              lineStyle: { type: "dashed", color: this.defaultColor },
+            },
+          },
+          {
+            scale: true,
+            gridIndex: 1,
+            axisLabel: {
+              color: this.defaultLabelColor,
+              formatter: (value) => this.formatNum(value),
+            },
+            splitLine: { show: false },
+          },
+        ],
+        series: [
+          {
+            name: "价格",
+            type: "candlestick",
+            data: candleData,
+            itemStyle: {
+              color: "#f56c6c",
+              color0: "#4eb61b",
+              borderColor: "#f56c6c",
+              borderColor0: "#4eb61b",
+            },
+          },
+          {
+            name: "成交量",
+            type: "bar",
+            xAxisIndex: 1,
+            yAxisIndex: 1,
+            data: volumeData,
+          },
+        ],
+      };
+      this.myChart.clear();
+      this.myChart.setOption(this.option);
     },
     time_arr(type) {
       if (type.indexOf("us-s") != -1) {
@@ -613,6 +768,9 @@ export default {
 }
 .tab-row {
   padding: 12px 0;
+}
+.chart-tabs {
+  margin-bottom: 4px;
 }
 .main-echarts {
   width: 100%;
