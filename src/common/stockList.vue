@@ -194,8 +194,9 @@ export default {
             isStale: true,
           },
         }));
-      }).catch(() => {
-        this.$message.error("股票行情获取失败");
+      }).catch((error) => {
+        console.warn("[stock-list] quote request failed", error);
+        this.$message.error(error && error.message ? error.message : "股票行情获取失败");
       }).then(() => {
         this.loading = false;
       });

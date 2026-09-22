@@ -561,8 +561,9 @@ export default {
         this.option.yAxis[1].max = maxVal;
         this.option.yAxis[1].interval = Math.abs((this.DWJZ - minVal) / 4);
         this.myChart.setOption(this.option);
-      }).catch(() => {
-        this.setChartError("行情加载失败，请检查网络后重试");
+      }).catch((error) => {
+        console.warn("[stock-detail] intraday request failed", error);
+        this.setChartError(error && error.message ? "行情加载失败：" + error.message : "行情加载失败，请检查网络后重试");
       }).then(() => {
         this.loading = false;
       });
@@ -597,8 +598,9 @@ export default {
           }
           this.renderKline(klines.map((item) => item.split(",")));
         })
-        .catch(() => {
-          this.setChartError("行情加载失败，请检查网络后重试");
+        .catch((error) => {
+          console.warn("[stock-detail] kline request failed", error);
+          this.setChartError(error && error.message ? "行情加载失败：" + error.message : "行情加载失败，请检查网络后重试");
         })
         .then(() => {
           this.loading = false;
