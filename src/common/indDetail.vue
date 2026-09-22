@@ -112,6 +112,15 @@ export default {
         this.initChart();
       }, 10);
     },
+    initStock(instrument, quote) {
+      var market = String(instrument && instrument.market || "SZ").toUpperCase();
+      var codeData = {
+        f13: market === "SH" || market === "SSE" ? "1" : "0",
+        f12: instrument && instrument.symbol,
+        f14: (quote && quote.name) || (instrument && instrument.name) || (instrument && instrument.symbol),
+      };
+      this.init(codeData);
+    },
     initChart() {
       this.chartEL = this.$refs.mainCharts;
       if (this.myChart) {

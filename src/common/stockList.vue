@@ -1,38 +1,45 @@
 <template>
   <div class="stock-list" :class="darkMode ? 'darkMode' : ''" v-loading="loading">
-    <div class="stock-toolbar">
+    <div v-if="isEdit" class="input-row">
+      <span>添加新股票:</span>
       <input
         v-model="inputCode"
         class="btn stock-input"
         type="text"
-        placeholder="输入股票代码，如 SZ.000001"
+        placeholder="请输入股票代码，如 000001 或 SZ.000001"
         @keyup.enter="addStock"
       />
-      <input class="btn primary" type="button" value="添加股票" @click="addStock" />
-      <input class="btn" type="button" value="刷新" @click="refresh" />
+      <input class="btn" type="button" value="确定" @click="addStock" />
     </div>
-    <p class="tips">第一阶段支持沪深 A 股行情；报价时间过旧时会标记为已过期。</p>
-    <table v-if="rows.length" class="stock-table">
+    <div class="table-row" style="min-height:160px">
+    <table class="stock-table">
       <thead>
         <tr>
-          <th class="align-left">股票（{{ rows.length }}）</th>
+          <th class="align-left">股票名称（{{ rows.length }}）</th>
+          <th v-if="isEdit">股票代码</th>
           <th>最新价</th>
           <th>涨跌幅</th>
-          <th>行情时间</th>
-          <th>操作</th>
+          <th v-if="!isEdit">更新时间</th>
+          <th v-if="isEdit">删除</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="row in rows" :key="row.instrument.id">
-          <td class="align-left">{{ row.quote.name || row.instrument.symbol }}（{{ row.instrument.market }}）</td>
+        <tr v-for="row in rows" :key="row.instrument.id" :class="isEdit ? 'table-drag' : ''">
+          <td
+            :class="isEdit ? 'fundName-noclick align-left' : 'fundName align-left'"
+            :title="row.quote.name || row.instrument.symbol"
+            @click.stop="!isEdit && openDetail(row)"
+          >{{ row.quote.name || row.instrument.symbol }}</td>
+          <td v-if="isEdit">{{ row.instrument.symbol }}</td>
           <td>{{ display(row.quote.last) }}</td>
           <td :class="row.quote.changePct >= 0 ? 'up' : 'down'">{{ display(row.quote.changePct) }}%</td>
-          <td>{{ row.quote.isStale ? "已过期" : row.quote.timestamp }}</td>
-          <td><input class="btn red" type="button" value="删除" @click="removeStock(row.instrument.id)" /></td>
+          <td v-if="!isEdit">{{ formatTime(row.quote.timestamp, row.quote.isStale) }}</td>
+          <td v-if="isEdit"><input class="btn red edit" type="button" value="✖" @click="removeStock(row.instrument.id)" /></td>
         </tr>
       </tbody>
     </table>
-    <p v-else class="empty">还没有股票，输入代码后添加。</p>
+    <p v-if="!rows.length" class="empty">暂无股票，请点击“编辑”后添加。</p>
+    </div>
   </div>
 </template>
 
@@ -44,6 +51,7 @@ export default {
   name: "stockList",
   props: {
     darkMode: { type: Boolean, default: false },
+    isEdit: { type: Boolean, default: false },
   },
   data() {
     return {
@@ -69,6 +77,12 @@ export default {
   methods: {
     display(value) {
       return isFinite(Number(value)) ? Number(value).toFixed(2) : "--";
+    },
+    formatTime(value, stale) {
+      if (stale) return "已过期";
+      var date = new Date(value);
+      if (!isFinite(date.getTime())) return "--";
+      return date.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" });
     },
     parseInstrument(value) {
       var raw = String(value || "").trim().toUpperCase().replace(":", ".");
@@ -133,6 +147,9 @@ export default {
       this.config.portfolio.transactions = (this.config.portfolio.transactions || []).filter((item) => item.instrumentId !== id);
       this.saveConfig(() => this.refresh());
     },
+    openDetail(row) {
+      this.$emit("open-detail", row);
+    },
     refresh() {
       var items = this.stockItems();
       if (!items.length) {
@@ -170,12 +187,22 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.stock-list { padding: 8px 0; }
-.stock-toolbar { display: flex; align-items: center; margin-bottom: 8px; }
-.stock-input { width: 220px; }
+.stock-list { padding: 0; }
+.input-row { text-align: center; margin-top: 10px; }
+.table-row { max-height: 425px; min-height: 160px; overflow-y: auto; }
+.stock-input { width: 270px; }
 .stock-table { width: 100%; border-collapse: collapse; }
-.stock-table th, .stock-table td { height: 30px; padding: 0 8px; text-align: right; }
+.stock-table th { padding: 8px 6px; }
+.stock-table td { padding: 6px 6px 5px; }
+.stock-table th, .stock-table td { height: 30px; text-align: right; }
 .stock-table tr:nth-child(even) { background: #f1f1f1; }
-.empty { text-align: center; padding: 30px 0; color: #909399; }
+.stock-table .align-left { text-align: left; }
+.fundName { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; user-select: none; }
+.fundName-noclick { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fundName:hover { color: #409eff; }
+.table-drag { cursor: move; }
+.up { color: #f56c6c; font-weight: bold; }
+.down { color: #4eb61b; font-weight: bold; }
+.empty { margin: 0; text-align: center; padding: 30px 0; color: #909399; }
 .darkMode .stock-table tr:nth-child(even) { background: rgba(255, 255, 255, 0.05); }
 </style>

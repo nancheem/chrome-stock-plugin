@@ -6,361 +6,81 @@
     :class="containerClass"
     :style="[zoom, grayscale, opacity]"
   >
-    <div class="asset-mode-bar">
-      <input class="btn" :class="assetMode === 'stock' ? 'primary' : ''" type="button" value="股票" @click="switchAssetMode('stock')" />
-      <input class="btn" :class="assetMode === 'fund' ? 'primary' : ''" type="button" value="基金" @click="switchAssetMode('fund')" />
-    </div>
-    <stock-list v-if="assetMode === 'stock'" :darkMode="darkMode"></stock-list>
-    <div v-if="assetMode === 'fund'">
+    <div
+      class="tab-row"
+      v-if="isGetStorage"
+      v-loading="loadingInd"
+      :element-loading-background="
+        darkMode ? 'rgba(0, 0, 0, 0.9)' : 'rgba(255, 255, 255, 0.9)'
+      "
+      :style="seciList.length > 0 ? { minHeight: '55px' } : {}"
+    >
       <div
-        class="tab-row"
-        v-if="isGetStorage"
-        v-loading="loadingInd"
-        :element-loading-background="
-          darkMode ? 'rgba(0, 0, 0, 0.9)' : 'rgba(255, 255, 255, 0.9)'
-        "
-        :style="seciList.length > 0 ? { minHeight: '55px' } : {}"
+        v-for="(el, index) in indFundData"
+        :draggable="isEdit"
+        class="tab-col indFund"
+        :class="drag"
+        :key="el.f12"
+        @click.stop="!isEdit && indDetail(el)"
+        @dragstart="handleDragStart($event, el)"
+        @dragover.prevent="handleDragOver($event, el)"
+        @dragenter="handleDragEnter($event, el, index)"
+        @dragend="handleDragEnd($event, el)"
       >
+        <h5>
+          {{ el.f14 }}
+          <span
+            v-if="isEdit"
+            @click="dltIndFund(index)"
+            class="dltBtn edit red btn"
+            >✖</span
+          >
+        </h5>
+        <p :class="el.f3 >= 0 ? 'up' : 'down'">{{ el.f2 }}</p>
+        <p :class="el.f3 >= 0 ? 'up' : 'down'">
+          {{ el.f4 }}&nbsp;&nbsp;{{ el.f3 }}%
+        </p>
+      </div>
+      <div v-if="isEdit && indFundData.length < 4" class="tab-col">
         <div
-          v-for="(el, index) in indFundData"
-          :draggable="isEdit"
-          class="tab-col indFund"
-          :class="drag"
-          :key="el.f12"
-          @click.stop="!isEdit && indDetail(el)"
-          @dragstart="handleDragStart($event, el)"
-          @dragover.prevent="handleDragOver($event, el)"
-          @dragenter="handleDragEnter($event, el, index)"
-          @dragend="handleDragEnd($event, el)"
+          v-if="!showAddSeciInput"
+          class="addSeci"
+          @click="() => (showAddSeciInput = true)"
         >
-          <h5>
-            {{ el.f14 }}
-            <span
-              v-if="isEdit"
-              @click="dltIndFund(index)"
-              class="dltBtn edit red btn"
-              >✖</span
-            >
-          </h5>
-          <p :class="el.f3 >= 0 ? 'up' : 'down'">
-            {{ el.f2
-            }}<input
-              v-if="isEdit && BadgeContent == 3"
-              @click="sltInd(el)"
-              :class="el.f13 + '.' + el.f12 == RealtimeIndcode ? 'slt' : ''"
-              class="btn edit"
-              style="margin-left:5px"
-              value="✔"
-              type="button"
-            />
-          </p>
-          <p :class="el.f3 >= 0 ? 'up' : 'down'">
-            {{ el.f4 }}&nbsp;&nbsp;{{ el.f3 }}%
-          </p>
+          添加
         </div>
-        <div v-if="isEdit && indFundData.length < 4" class="tab-col">
-          <div
-            v-if="!showAddSeciInput"
-            class="addSeci"
-            @click="() => (showAddSeciInput = true)"
-          >
-            添加
+        <div v-else>
+          <div style="padding-top:2px">
+            <el-select
+              size="mini"
+              :popper-append-to-body="false"
+              v-model="sltSeci"
+              style="width:110px"
+              placeholder="请选择"
+            >
+              <el-option
+                v-for="item in userSeciList"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              ></el-option>
+            </el-select>
           </div>
-          <div v-else>
-            <div style="padding-top:2px">
-              <el-select
-                size="mini"
-                :popper-append-to-body="false"
-                v-model="sltSeci"
-                style="width:110px"
-                placeholder="请选择"
-              >
-                <el-option
-                  v-for="item in userSeciList"
-                  :key="item.value"
-                  :label="item.label"
-                  :value="item.value"
-                ></el-option>
-              </el-select>
-            </div>
-            <div style="margin-top:4px">
-              <input
-                class="btn"
-                type="button"
-                value="取消"
-                @click="() => (showAddSeciInput = false)"
-              />
-              <input class="btn" type="button" value="确定" @click="saveSeci" />
-            </div>
+          <div style="margin-top:4px">
+            <input class="btn" type="button" value="取消" @click="showAddSeciInput = false" />
+            <input class="btn" type="button" value="确定" @click="saveSeci" />
           </div>
         </div>
-      </div>
-      <div v-if="isEdit" class="input-row">
-        <span>添加新基金:</span>
-        <!-- <input v-model="fundcode" class="btn" type="text" placeholder="请输入基金代码" /> -->
-        <el-select
-          v-model="fundcode"
-          multiple
-          filterable
-          :popper-append-to-body="false"
-          remote
-          size="mini"
-          reserve-keyword
-          @visible-change="selectChange"
-          placeholder="请输入基金编码，支持按名称或编码搜索"
-          :remote-method="remoteMethod"
-          :loading="loading"
-          style="width:300px"
-        >
-          <el-option
-            v-for="item in searchOptions"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value"
-          >
-            <span style="float: left">{{ item.label }}</span>
-            <span
-              style="float: right; color: #8492a6; font-size: 13px;margim-right:20px;padding-right:15px"
-              >{{ item.value }}</span
-            >
-          </el-option>
-        </el-select>
-        <input @click="save" class="btn" type="button" value="确定" />
-      </div>
-      <p v-if="isEdit" class="tips center">
-        部分新发基金或QDII基金可以搜索到，但可能无法获取估值情况
-      </p>
-      <div
-        v-if="isGetStorage"
-        v-loading="loadingList"
-        :element-loading-background="
-          darkMode ? 'rgba(0, 0, 0, 0.9)' : 'rgba(255, 255, 255, 0.9)'
-        "
-        class="table-row"
-        style="min-height:160px"
-      >
-        <table :class="tableHeight">
-          <thead>
-            <tr>
-              <th class="align-left">基金名称（{{ dataList.length }}）</th>
-              <th v-if="isEdit">基金代码</th>
-              <th v-if="showGSZ && !isEdit">估算净值</th>
-              <th
-                style="text-align:center"
-                v-if="isEdit && (showCostRate || showCost)"
-              >
-                成本价
-              </th>
-              <th @click="sortList('amount')" v-if="showAmount" class="pointer">
-                持有额
-                <span :class="sortType.amount" class="down-arrow"></span>
-              </th>
-              <th
-                @click="sortList('costGains')"
-                v-if="showCost"
-                class="pointer"
-              >
-                持有收益
-                <span :class="sortType.costGains" class="down-arrow"></span>
-              </th>
-              <th
-                @click="sortList('costGainsRate')"
-                v-if="showCostRate"
-                class="pointer"
-              >
-                持有收益率
-                <span :class="sortType.costGainsRate" class="down-arrow"></span>
-              </th>
-              <th @click="sortList('gszzl')" class="pointer">
-                涨跌幅
-                <span :class="sortType.gszzl" class="down-arrow"></span>
-              </th>
-              <th @click="sortList('gains')" v-if="showGains" class="pointer">
-                估算收益
-                <span :class="sortType.gains" class="down-arrow"></span>
-              </th>
-              <th v-if="!isEdit">更新时间</th>
-              <th
-                style="text-align:center"
-                v-if="
-                  isEdit &&
-                    (showAmount || showGains || showCost || showCostRate)
-                "
-              >
-                持有份额
-              </th>
-              <th v-if="isEdit && BadgeContent == 1">特别关注</th>
-              <th v-if="isEdit">删除</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="(el, index) in dataList"
-              :key="el.fundcode"
-              :draggable="isEdit"
-              :class="drag"
-              @dragstart="handleDragStart($event, el)"
-              @dragover.prevent="handleDragOver($event, el)"
-              @dragenter="handleDragEnter($event, el, index)"
-              @dragend="handleDragEnd($event, el)"
-            >
-              <td
-                :class="
-                  isEdit ? 'fundName-noclick align-left' : 'fundName align-left'
-                "
-                :title="el.name"
-                @click.stop="!isEdit && fundDetail(el)"
-              >
-                <span class="hasReplace-tip" v-if="el.hasReplace">✔</span>{{ el.name }}
-              </td>
-              <td v-if="isEdit">{{ el.fundcode }}</td>
-              <td v-if="showGSZ && !isEdit">{{ el.gsz }}</td>
-              <td v-if="isEdit && (showCostRate || showCost)">
-                <input
-                  class="btn num"
-                  placeholder="持仓成本价"
-                  v-model="el.cost"
-                  @input="changeCost(el, index)"
-                  type="text"
-                />
-              </td>
-
-              <td v-if="showAmount">
-                {{
-                  parseFloat(el.amount).toLocaleString("zh", {
-                    minimumFractionDigits: 2,
-                  })
-                }}
-              </td>
-              <td v-if="showCost" :class="el.costGains >= 0 ? 'up' : 'down'">
-                {{
-                  parseFloat(el.costGains).toLocaleString("zh", {
-                    minimumFractionDigits: 2,
-                  })
-                }}
-              </td>
-              <td
-                v-if="showCostRate"
-                :class="el.costGainsRate >= 0 ? 'up' : 'down'"
-              >
-                {{ el.cost > 0 ? el.costGainsRate + "%" : "" }}
-              </td>
-              <td :class="el.gszzl >= 0 ? 'up' : 'down'">{{ el.gszzl }}%</td>
-              <td v-if="showGains" :class="el.gains >= 0 ? 'up' : 'down'">
-                {{
-                  parseFloat(el.gains).toLocaleString("zh", {
-                    minimumFractionDigits: 2,
-                  })
-                }}
-              </td>
-              <td v-if="!isEdit">
-                {{
-                  el.hasReplace ? el.gztime.substr(5, 5) : el.gztime.substr(10)
-                }}
-                
-              </td>
-              <th
-                style="text-align:center"
-                v-if="
-                  isEdit &&
-                    (showAmount || showGains || showCost || showCostRate)
-                "
-              >
-                <input
-                  class="btn num"
-                  placeholder="输入持有份额"
-                  v-model="el.num"
-                  @input="changeNum(el, index)"
-                  type="text"
-                />
-              </th>
-              <td v-if="isEdit && BadgeContent == 1">
-                <input
-                  @click="slt(el.fundcode)"
-                  :class="el.fundcode == RealtimeFundcode ? 'slt' : ''"
-                  class="btn edit"
-                  value="✔"
-                  type="button"
-                />
-              </td>
-              <td v-if="isEdit">
-                <input
-                  @click="dlt(el.fundcode)"
-                  class="btn red edit"
-                  value="✖"
-                  type="button"
-                />
-              </td>
-            </tr>
-          </tbody>
-        </table>
-
-        <!-- <table :class="tableHeight" class="detailTable">
-          <thead>
-            <tr>
-              <th class="align-left">
-                <div>基金名称</div>
-                <p>基金编码</p>
-              </th>
-              <th>
-                <div>持有收益率</div>
-                <p>持有收益</p>
-              </th>
-              <th>
-                <div>估算涨幅</div>
-                <p>估算收益</p>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="(el, index) in dataList"
-              :key="el.fundcode"
-              :draggable="isEdit"
-              :class="drag"
-              @dragstart="handleDragStart($event, el)"
-              @dragover.prevent="handleDragOver($event, el)"
-              @dragenter="handleDragEnter($event, el, index)"
-              @dragend="handleDragEnd($event, el)"
-            >
-              <td
-                :class="
-                  isEdit ? 'fundName-noclick align-left' : 'fundName align-left'
-                "
-                :title="el.name"
-                @click.stop="!isEdit && fundDetail(el)"
-              >
-                <div>{{ el.name }}</div>
-                <p>{{ el.fundcode }}</p>
-              </td>
-              <td :class="el.costGains >= 0 ? 'up' : 'down'">
-                <div>{{ el.cost > 0 ? el.costGainsRate + "%" : "" }}</div>
-                <p>
-                  {{
-                  parseFloat(el.costGains).toLocaleString("zh", {
-                    minimumFractionDigits: 2,
-                  })
-                }}
-                </p>
-              </td>
-              <td :class="el.gszzl >= 0 ? 'up' : 'down'">
-                <div>{{ el.gszzl }}%</div>
-                <p>
-                  {{
-                    parseFloat(el.gains).toLocaleString("zh", {
-                      minimumFractionDigits: 2,
-                    })
-                  }}
-                </p>
-              </td>
-            </tr>
-          </tbody>
-        </table> -->
       </div>
     </div>
-    <p v-if="isEdit" class="tips">
-      特别关注功能介绍：指定一个基金，在程序图标中以角标的形式实时更新，请在设置中选择角标类型与内容。
-    </p>
+    <stock-list
+      ref="stockList"
+      :darkMode="darkMode"
+      :isEdit="isEdit"
+      @open-detail="stockDetail"
+    ></stock-list>
+    <!-- 股票沿用原基金列表的编辑和底部操作框架。 -->
+
 
     <div v-show="isEdit" class="input-row gear-input-row">
       <el-switch
@@ -485,7 +205,6 @@
       :top="30"
     ></change-log>
   </div>
-  </div>
 </template>
 
 <script>
@@ -515,7 +234,6 @@ export default {
   data() {
     return {
       isEdit: false,
-      assetMode: "stock",
       fundcode: "",
       isAdd: false,
       indFundData: [],
@@ -733,22 +451,14 @@ export default {
   },
   methods: {
     refresh() {
-      this.init();
+      this.getIndFundData();
+      if (this.$refs.stockList) {
+        this.$refs.stockList.refresh();
+      }
       this.isRefresh = true;
       setTimeout(() => {
         this.isRefresh = false;
       }, 1500);
-    },
-    switchAssetMode(mode) {
-      this.assetMode = mode === "fund" ? "fund" : "stock";
-      chrome.storage.sync.set({ assetMode: this.assetMode }, () => {
-        if (this.assetMode === "fund") {
-          this.init();
-        } else {
-          clearInterval(this.myVar);
-          clearInterval(this.myVar1);
-        }
-      });
     },
     formatTooltip(val) {
       return val + "%";
@@ -792,7 +502,6 @@ export default {
           "grayscaleValue",
           "opacityValue",
           "sortTypeObj",
-          "assetMode",
         ],
         (res) => {
           this.fundList = res.fundList ? res.fundList : this.fundList;
@@ -834,14 +543,6 @@ export default {
           this.grayscaleValue = res.grayscaleValue ? res.grayscaleValue : 0;
           this.opacityValue = res.opacityValue ? res.opacityValue : 0;
           this.sortTypeObj = res.sortTypeObj ? res.sortTypeObj : {};
-          this.assetMode = res.assetMode
-            ? res.assetMode === "fund"
-              ? "fund"
-              : "stock"
-            : res.fundListM
-            ? "fund"
-            : "stock";
-
           if (this.seciList.length > 0) {
             this.loadingInd = true;
           }
@@ -854,11 +555,8 @@ export default {
           };
 
           this.isGetStorage = true;
-          if (this.assetMode === "fund") {
-            this.getIndFundData();
-            this.getData();
-            this.checkInterval(true);
-          }
+          this.getIndFundData();
+          this.checkInterval(true);
 
           let ver = res.version ? res.version : "1.0.0";
           if (ver != this.localVersion) {
@@ -881,6 +579,10 @@ export default {
       this.detailShadow = true;
       this.$refs.indDetail.init(val);
     },
+    stockDetail(row) {
+      this.detailShadow = true;
+      this.$refs.indDetail.initStock(row.instrument, row.quote);
+    },
     fundDetail(val) {
       this.sltFund = val;
       this.detailShadow = true;
@@ -897,21 +599,14 @@ export default {
       clearInterval(this.myVar);
       clearInterval(this.myVar1);
       chrome.runtime.sendMessage({ type: "DuringDate" }, (response) => {
-        this.isDuringDate = response.farewell;
-        if (this.isLiveUpdate && this.isDuringDate) {
-          if (!isFirst) {
-            this.getIndFundData();
-            this.getData();
-          }
-          this.myVar = setInterval(() => {
-            this.getIndFundData();
-          }, 5 * 1000);
-          this.myVar1 = setInterval(() => {
-            this.getData();
-          }, 60 * 1000);
-        } else {
-          clearInterval(this.myVar);
-          clearInterval(this.myVar1);
+        this.isDuringDate = response && response.farewell;
+        if (this.isDuringDate) {
+          this.getIndFundData();
+          this.myVar = setInterval(() => this.getIndFundData(), 5 * 1000);
+        }
+        if (this.isLiveUpdate && this.isDuringDate && this.$refs.stockList) {
+          if (!isFirst) this.$refs.stockList.refresh();
+          this.myVar1 = setInterval(() => this.$refs.stockList.refresh(), 60 * 1000);
         }
       });
     },
@@ -1382,11 +1077,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.asset-mode-bar {
-  padding-bottom: 6px;
-  text-align: right;
-}
-
 .container {
   min-width: 400px;
   min-height: 150px;
