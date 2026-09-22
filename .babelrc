@@ -1,4 +1,5 @@
 {
+  "sourceType": "unambiguous",
   "plugins": [
     [
       "component",
