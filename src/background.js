@@ -382,23 +382,30 @@ var getData = () => {
 
 getData();
 
-chrome.contextMenus.create({
-  title: "以独立窗口模式打开",
-  contexts: ["action"],
-  onclick: () => {
-    chrome.windows.create({
-      url: chrome.runtime.getURL("popup/popup.html"),
-      width: 700,
-      height: 550,
-      top: 200,
-      type: "popup",
-    }, (function (e) {
-      chrome.windows.update(e.id, {
-        focused: true
-      })
-    }))
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.contextMenus.create({
+    id: "open-standalone-window",
+    title: "以独立窗口模式打开",
+    contexts: ["action"],
+  });
+});
+
+chrome.contextMenus.onClicked.addListener((info) => {
+  if (info.menuItemId !== "open-standalone-window") {
+    return;
   }
-})
+  chrome.windows.create({
+    url: chrome.runtime.getURL("popup/popup.html"),
+    width: 700,
+    height: 550,
+    top: 200,
+    type: "popup",
+  }, (function (e) {
+    chrome.windows.update(e.id, {
+      focused: true
+    })
+  }));
+});
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type == "DuringDate") {
