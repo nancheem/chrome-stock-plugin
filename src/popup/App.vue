@@ -79,7 +79,7 @@
       :isEdit="isEdit"
       @open-detail="stockDetail"
     ></stock-list>
-    <!-- 股票沿用原基金列表的编辑和底部操作框架。 -->
+    <!-- 股票列表使用统一的编辑和底部操作框架。 -->
 
 
     <div v-show="isEdit" class="input-row gear-input-row">
@@ -131,49 +131,6 @@
         @click="isEdit = !isEdit"
       />
       <input class="btn" type="button" value="设置" @click="option" />
-      <input
-        class="btn primary"
-        type="button"
-        title="φ(>ω<*)"
-        value="打赏"
-        @click="reward"
-      />
-    </div>
-    <div class="input-row" v-if="showCost || showGains">
-      <input
-        v-if="showGains"
-        class="btn"
-        :class="allGains[0] >= 0 ? 'btn-up' : 'btn-down'"
-        type="button"
-        :title="
-          allGains[0] >= 0 ? 'd=====(￣▽￣*)b 赞一个' : '∑(っ°Д°;)っ 大事不好啦'
-        "
-        :value="
-          '日收益：' +
-            parseFloat(allGains[0]).toLocaleString('zh', {
-              minimumFractionDigits: 2,
-            }) +
-            (isNaN(allGains[1]) ? '' : '（' + allGains[1] + '%）')
-        "
-      />
-      <input
-        v-if="showCost"
-        class="btn"
-        :class="allCostGains[0] >= 0 ? 'btn-up' : 'btn-down'"
-        type="button"
-        :title="
-          allCostGains[0] >= 0
-            ? 'd=====(￣▽￣*)b 赞一个'
-            : '∑(っ°Д°;)っ 大事不好啦'
-        "
-        :value="
-          '持有收益：' +
-            parseFloat(allCostGains[0]).toLocaleString('zh', {
-              minimumFractionDigits: 2,
-            }) +
-            (isNaN(allCostGains[1]) ? '' : '（' + allCostGains[1] + '%）')
-        "
-      />
     </div>
     <div
       class="refresh"
@@ -196,12 +153,10 @@
       :darkMode="darkMode"
       ref="fundDetail"
     ></fund-detail>
-    <reward @close="rewardShadow = false" ref="reward"></reward>
   </div>
 </template>
 
 <script>
-import reward from "../common/reward";
 import indDetail from "../common/indDetail";
 import fundDetail from "../common/fundDetail";
 import market from "../common/market";
@@ -215,7 +170,6 @@ function debounce(fn, wait = 700) {
 
 export default {
   components: {
-    reward,
     fundDetail,
     indDetail,
     market,
@@ -235,8 +189,6 @@ export default {
       dataListDft: [],
       myVar: null,
       myVar1: null,
-      rewardShadow: false,
-      checked: "wepay",
       showGains: false,
       showAmount: false,
       showCost: false,
@@ -376,9 +328,7 @@ export default {
       if (this.darkMode) {
         className += "darkMode ";
       }
-      if (this.rewardShadow) {
-        className += "more-height";
-      } else if (this.detailShadow) {
+      if (this.detailShadow) {
         className += "detail-container";
       } else if (this.isEdit) {
         className += "more-width";
@@ -624,10 +574,6 @@ export default {
 
     option() {
       chrome.tabs.create({ url: "/options/options.html" });
-    },
-    reward() {
-      this.rewardShadow = true;
-      this.$refs.reward.init();
     },
     sortList(type) {
       for (const key in this.sortType) {
@@ -1086,10 +1032,6 @@ export default {
   100% {
     transform: rotate(-360deg);
   }
-}
-
-.more-height {
-  min-height: 450px;
 }
 
 .more-width {

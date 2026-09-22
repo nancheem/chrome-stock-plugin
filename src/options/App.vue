@@ -3,48 +3,7 @@
     <div>
       <ul class="setting-list">
         <li>
-          <div class="list-title">
-            角标展示设置
-          </div>
-          <div class="select-row">
-            角标开关：
-            <el-radio-group
-              v-model="showBadge"
-              @change="changeOption($event, 'showBadge', true)"
-            >
-              <el-radio border :label="1">打开角标</el-radio>
-              <el-radio border :label="2">关闭角标</el-radio>
-            </el-radio-group>
-          </div>
-          <div v-if="showBadge == 1" class="select-row">
-            角标内容：
-            <el-radio-group
-              v-model="BadgeContent"
-              @change="changeOption($event, 'BadgeContent', true)"
-            >
-              <el-radio border :label="1">单个基金</el-radio>
-              <el-radio border :label="2">所有基金</el-radio>
-              <el-radio border :label="3">单个指数</el-radio>
-            </el-radio-group>
-          </div>
-          <div v-if="showBadge == 1 && BadgeContent != 3" class="select-row">
-            角标类型：
-            <el-radio-group
-              v-model="BadgeType"
-              @change="changeOption($event, 'BadgeType', true)"
-            >
-              <el-radio border :label="1">日收益率</el-radio>
-              <el-radio border :label="2">日收益额</el-radio>
-            </el-radio-group>
-          </div>
-          <p style="margin-top:5px">
-            tips：若选择单个基金，请打开编辑按钮中的特别关注选项；若要计算收益额，需要先打开显示持有金额开关，在编辑中填写基金对应的持有额。
-          </p>
-        </li>
-        <li>
-          <div class="list-title">
-            主题与页面设置
-          </div>
+          <div class="list-title">主题与页面设置</div>
           <div class="select-row">
             <el-switch
               v-model="darkMode"
@@ -53,8 +12,7 @@
               inactive-color="#13ce66"
               inactive-text="标准模式"
               active-text="暗色模式"
-            >
-            </el-switch>
+            ></el-switch>
           </div>
           <div class="select-row">
             <el-switch
@@ -62,182 +20,40 @@
               @change="changeFontSize"
               inactive-text="迷你字号"
               active-text="标准字号"
-            >
-            </el-switch>
+            ></el-switch>
           </div>
         </li>
-
         <li>
-          <div class="list-title">
-            基金列表展示内容设置
-          </div>
+          <div class="list-title">股票行情设置</div>
           <div class="select-row">
-            <span>显示估算净值</span>
+            <span>交易时段自动刷新</span>
             <el-switch
-              v-model="showGSZ"
-              @change="changeOption($event, 'showGSZ')"
-            >
-            </el-switch>
+              v-model="isLiveUpdate"
+              @change="changeOption($event, 'isLiveUpdate')"
+            ></el-switch>
           </div>
-          <div class="select-row">
-            <span>显示持有金额</span>
-            <el-switch
-              v-model="showAmount"
-              @change="changeOption($event, 'showAmount')"
-            >
-            </el-switch>
-          </div>
-          <div class="select-row">
-            <span>显示估值收益</span>
-            <el-switch
-              v-model="showGains"
-              @change="changeOption($event, 'showGains')"
-            >
-            </el-switch>
-          </div>
-          <div class="select-row">
-            <span>显示持有收益</span>
-            <el-switch
-              v-model="showCost"
-              @change="changeOption($event, 'showCost')"
-            >
-            </el-switch>
-          </div>
-          <div class="select-row">
-            <span>显示持有收益率</span>
-            <el-switch
-              v-model="showCostRate"
-              @change="changeOption($event, 'showCostRate')"
-            >
-            </el-switch>
-          </div>
-          <p>
-            tips：在编辑设置里，输入持有份额可计算当日估值收益。输入持仓成本可计算累计持有收益。
-          </p>
+          <p>开启后，首页会在交易时段自动刷新自选股票行情；分时、日、周、月、年 K 线可点击股票名称查看。</p>
         </li>
         <li>
-          <div class="list-title">
-            基金配置信息导入与导出
-          </div>
+          <div class="list-title">股票配置管理</div>
           <div style="padding:8px 0 10px">
-            <input
-              class="btn"
-              type="button"
-              value="导出配置文件"
-              @click="exportConfig"
-            />
+            <input class="btn" type="button" value="导出配置文件" @click="exportConfig" />
             <a
               class="exportBtn"
               ref="configMsg"
               :href="configHref"
-              download="自选基金助手配置文件.json"
+              download="自选股票助手配置文件.json"
             ></a>
             <a href="javascript:;" class="uploadFile btn"
               >导入配置文件
-              <input
-                ref="importInput"
-                type="file"
-                accept="application/json"
-                @change="importInput"
-              />
+              <input ref="importInput" type="file" accept="application/json" @change="importInput" />
             </a>
-            <input
-              class="btn"
-              type="button"
-              value="导入导出文本"
-              @click="openConfigBox"
-            />
+            <input class="btn" type="button" value="导入导出文本" @click="openConfigBox" />
           </div>
-          <div style="padding:8px 0 10px">
-            <input
-              class="btn"
-              type="button"
-              value="导出基金列表Excel"
-              :disabled="loadingFundList"
-              @click="getFundData"
-            />
-            <a href="javascript:;" class="uploadFile btn"
-              >导入基金列表Excel
-              <input
-                ref="importExcel"
-                type="file"
-                accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
-                @change="importExcel"
-              />
-            </a>
-          </div>
-          <p>
-            tips：插件本身支持跟随浏览器账号自动同步，若想手动同步可使用导入导出功能，同步小程序数据可以选择导入导出文本，Excel导入时不用填写基金名称。
-          </p>
+          <p>配置文件包含自选股票、指数卡片和页面设置，可用于浏览器之间迁移或备份。</p>
         </li>
         <li>
-          <div class="list-title">请作者喝杯咖啡</div>
-          <p style="line-height:34px">
-            开源不易，本插件是一个完全开源的项目，也衍生出许多同类产品，您的支持是对作者最大的鼓励。如果你觉得此插件对你有所帮助，或者想要支持一下我<input
-              class="btn primary"
-              type="button"
-              title="φ(>ω<*)"
-              value="点击打赏"
-              @click="reward"
-            />
-          </p>
-          <p style="line-height:34px">
-            或者你也可以帮忙点一个star，点击查看源码→
-            <span
-              title="点击查看项目源码"
-              class="black icon-btn-row"
-              @click="openGithub"
-            >
-              <svg
-                class="githubIcon"
-                height="24"
-                viewBox="0 0 16 16"
-                version="1.1"
-                width="24"
-                aria-hidden="true"
-              >
-                <path
-                  d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"
-                />
-              </svg>
-              <input
-                class="btn black githubText"
-                type="button"
-                value="源代码"
-              />
-            </span>
-          </p>
-          <reward :top="50" ref="reward"></reward>
-        </li>
-        <li>
-          <div class="list-title">
-            节假日信息
-            <button
-              :disabled="disabled"
-              @click="getHoliday"
-              title="点击更新节假日信息"
-              class="btn"
-            >
-              更新
-            </button>
-            <span class="loading" v-if="disabled">更新中。。。</span>
-          </div>
-          <p>
-            <span v-if="holiday">
-              当前节假日版本：v{{
-                holiday.version
-              }}&nbsp;&nbsp;&nbsp;&nbsp;最后节假日日期：{{ holiday.lastDate }}
-            </span>
-          </p>
-          <p>
-            tips：更新节假日信息，可以在节假日暂停更新估值，节假日信息会不定时更新。
-            <a href="#" @click="openHoliday">查看最新版</a>
-          </p>
-        </li>
-        <li>
-          <div class="list-title">
-            关于插件
-          </div>
+          <div class="list-title">关于插件</div>
           <p style="line-height:34px">
             当前插件版本：v{{ version }}
             <input
@@ -277,36 +93,21 @@
 </template>
 
 <script>
-import reward from "../common/reward";
 import changeLog from "../common/changeLog";
 import configBox from "../common/configBox";
 const { version } = require("../../package.json");
-import { export_json_to_excel } from "../common/js/vendor/Export2Excel";
 export default {
   components: {
-    reward,
     changeLog,
     configBox,
   },
   data() {
     return {
-      fundListM: null,
-      userId: null,
       configHref: null,
-      holiday: null,
-      disabled: false,
-      showGSZ: false,
-      showAmount: false,
-      showGains: false,
-      showCost: false,
-      showCostRate: false,
       darkMode: false,
-      showBadge: 1,
-      BadgeContent: 1,
-      BadgeType: 1,
+      isLiveUpdate: false,
       changelogShadow: false,
       normalFontSize: false,
-      loadingFundList: false,
       version,
     };
   },
@@ -322,98 +123,6 @@ export default {
     },
   },
   methods: {
-    getFundData() {
-      this.loadingFundList = true;
-      this.$message({
-        message: "正在导出中，请稍候......",
-        type: "success",
-        center: true,
-      });
-      let fundlist = this.fundListM.map((val) => val.code).join(",");
-      let url =
-        "https://fundmobapi.eastmoney.com/FundMNewApi/FundMNFInfo?pageIndex=1&pageSize=200&plat=Android&appType=ttjj&product=EFund&Version=1&deviceid=" +
-        this.userId +
-        "&Fcodes=" +
-        fundlist;
-      this.$axios
-        .get(url)
-        .then((res) => {
-          let data = res.data.Datas;
-          this.dataList = [];
-          let dataList = [];
-
-          data.forEach((val) => {
-            let data = {
-              code: val.FCODE,
-              name: val.SHORTNAME,
-            };
-
-            let slt = this.fundListM.filter((item) => item.code == data.code);
-            data.num = slt[0].num;
-            data.cost = slt[0].cost;
-
-            dataList.push(data);
-          });
-          this.dataList = dataList;
-          this.downloadData();
-          this.loadingFundList = false;
-        })
-        .catch((error) => {});
-    },
-    downloadData() {
-      var tHeader = ["基金代码", "基金名称", "持有份额", "成本价"];
-      var filterVal = ["code", "name", "num", "cost"];
-      var data = this.formatJson(filterVal, this.dataList);
-      export_json_to_excel(tHeader, data, "自选基金助手-基金配置");
-    },
-    formatJson(filterVal, jsonData) {
-      return jsonData.map((v) => filterVal.map((j) => v[j]));
-    },
-    importExcel(e) {
-      var files = e.target.files;
-      let fileReader = new FileReader();
-      fileReader.onload = (event) => {
-        try {
-          let data = event.target.result;
-          let workbook = XLSX.read(data, {
-            type: "binary",
-          });
-          // excel读取出的数据
-          let excelData = XLSX.utils.sheet_to_json(
-            workbook.Sheets[workbook.SheetNames[0]]
-          );
-          // 将上面数据转换成 table需要的数据
-          let arr = [];
-          excelData.forEach((item) => {
-            let obj = {};
-            obj.code = item["基金代码"];
-            obj.num = item["持有份额"];
-            obj.cost = item["成本价"];
-            arr.push(obj);
-          });
-          chrome.storage.sync.set({ fundListM: arr }, (val) => {
-            this.initOption();
-            chrome.runtime.sendMessage({ type: "refresh" });
-            this.$message({
-              message: "恭喜,导入基金列表成功！",
-              type: "success",
-              center: true,
-            });
-            this.$refs.importExcel.value = null;
-          });
-        } catch (e) {
-          this.$message({
-            message: "导入失败！",
-            type: "error",
-            center: true,
-          });
-          return false;
-        }
-      };
-      // 读取文件 成功后执行上面的回调函数
-      fileReader.readAsBinaryString(files[0]);
-    },
-
     changelog() {
       this.changelogShadow = true;
       this.$refs.changelog.init();
@@ -439,72 +148,11 @@ export default {
     },
     initOption() {
       chrome.storage.sync.get(
-        [
-          "holiday",
-          "showNum",
-          "showAmount",
-          "showGains",
-          "showCost",
-          "showCostRate",
-          "showGSZ",
-          "darkMode",
-          "normalFontSize",
-          "showBadge",
-          "BadgeContent",
-          "BadgeType",
-          "userId",
-          "fundListM",
-        ],
+        ["darkMode", "normalFontSize", "isLiveUpdate"],
         (res) => {
-          if (res.showNum) {
-            //解决版本遗留问题，拆分属性
-            chrome.storage.sync.set({
-              showNum: false,
-            });
-            chrome.storage.sync.set(
-              {
-                showAmount: true,
-              },
-              () => {
-                this.showAmount = true;
-              }
-            );
-            chrome.storage.sync.set(
-              {
-                showGains: true,
-              },
-              () => {
-                this.showGains = true;
-              }
-            );
-          } else {
-            this.showAmount = res.showAmount ? res.showAmount : false;
-            this.showGains = res.showGains ? res.showGains : false;
-          }
-
-          if (res.holiday) {
-            this.holiday = res.holiday;
-            console.log(this.holiday);
-          } else {
-            this.getHoliday();
-          }
-          if (res.userId) {
-            this.userId = res.userId;
-          } else {
-            this.userId = this.getGuid();
-            chrome.storage.sync.set({
-              userId: this.userId,
-            });
-          }
-          this.fundListM = res.fundListM ? res.fundListM : [];
-          this.showGSZ = res.showGSZ ? res.showGSZ : false;
-          this.showCost = res.showCost ? res.showCost : false;
-          this.showCostRate = res.showCostRate ? res.showCostRate : false;
-          this.darkMode = res.darkMode ? res.darkMode : false;
-          this.normalFontSize = res.normalFontSize ? res.normalFontSize : false;
-          this.showBadge = res.showBadge ? res.showBadge : 1;
-          this.BadgeContent = res.BadgeContent ? res.BadgeContent : 1;
-          this.BadgeType = res.BadgeType ? res.BadgeType : 1;
+          this.darkMode = res.darkMode === true;
+          this.normalFontSize = res.normalFontSize === true;
+          this.isLiveUpdate = res.isLiveUpdate === true;
         }
       );
     },
@@ -554,39 +202,14 @@ export default {
     openConfigBox() {
       this.$refs.configBox.init();
     },
-    getHoliday() {
-      this.disabled = true;
-      let url = "https://x2rr.github.io/funds/holiday.json";
-      this.$axios.get(url).then((res) => {
-        chrome.storage.sync.set(
-          {
-            holiday: res.data,
-          },
-          () => {
-            this.holiday = res.data;
-            chrome.runtime.sendMessage({
-              type: "refreshHoliday",
-              data: res.data,
-            });
-            this.disabled = false;
-          }
-        );
-      });
-    },
-    openHoliday() {
-      window.open("https://x2rr.github.io/funds/holiday.json");
-    },
     openGithub() {
-      window.open("https://github.com/x2rr/funds");
+      window.open("https://github.com/nancheem/chrome-stock-plugin");
     },
     openTG() {
       window.open("https://t.me/choose_funds_chat");
     },
     openHomePage() {
-      window.open("http://rabt.gitee.io/funds/docs/dist/index.html");
-    },
-    reward(data) {
-      this.$refs.reward.init();
+      window.open("https://github.com/nancheem/chrome-stock-plugin");
     },
     changeDarkMode() {
       chrome.storage.sync.set({
