@@ -49,6 +49,7 @@ require("echarts/lib/chart/bar");
 
 require("echarts/lib/component/tooltip");
 require("echarts/lib/component/legend");
+require("echarts/lib/component/dataZoom");
 
 export default {
   name: "indDetail",
@@ -112,6 +113,17 @@ export default {
   methods: {
     formatNum(val) {
       return (val / 10000).toFixed(3) + "万";
+    },
+    formatVolumeAxis(val) {
+      var num = Number(val) || 0;
+      var abs = Math.abs(num);
+      if (abs >= 100000000) {
+        return (num / 100000000).toFixed(abs >= 1000000000 ? 1 : 2) + "亿";
+      }
+      if (abs >= 10000) {
+        return (num / 10000).toFixed(abs >= 1000000 ? 0 : 1) + "万";
+      }
+      return String(Math.round(num));
     },
     init(val) {
       this.boxShadow = true;
@@ -183,17 +195,43 @@ export default {
         axisPointer: {
           link: { xAxisIndex: "all" },
         },
+        dataZoom: [
+          {
+            type: "inside",
+            xAxisIndex: [0, 1],
+            filterMode: "none",
+            start: 0,
+            end: 100,
+            zoomOnMouseWheel: true,
+            moveOnMouseMove: true,
+          },
+          {
+            type: "slider",
+            xAxisIndex: [0, 1],
+            filterMode: "none",
+            start: 0,
+            end: 100,
+            bottom: 0,
+            height: 18,
+            showDetail: false,
+            showDataShadow: false,
+            borderColor: "#dcdfe6",
+            fillerColor: "rgba(64, 158, 255, 0.18)",
+            handleStyle: { color: "#409eff" },
+            textStyle: { color: "#909399", fontSize: 10 },
+          },
+        ],
         grid: [
           {
             top: 20,
-            left: 60,
+            left: 72,
             height: "50%",
           },
           {
             show: true,
-            left: 60,
+            left: 72,
             top: "65%",
-            height: "28%", //交易量图的高度
+            height: "24%", //交易量图的高度
           },
         ],
         xAxis: [
@@ -335,16 +373,10 @@ export default {
               //label文字设置
               //   color: labelColor,
               inside: false, //label文字朝内对齐
-              fontSize: 10,
+              fontSize: 9,
+              margin: 8,
               onZero: false,
-              formatter: function(params) {
-                //计算右边Y轴对应的当前价的涨幅比例
-                var _p = (params / 10000).toFixed(2);
-                if (params == 0) {
-                  _p = "(万)";
-                }
-                return _p;
-              },
+              formatter: (params) => this.formatVolumeAxis(params),
             },
           },
         ],
@@ -635,8 +667,8 @@ export default {
           },
         },
         grid: [
-          { top: 20, left: 60, right: 55, height: "55%" },
-          { left: 60, right: 55, top: "70%", height: "20%" },
+          { top: 20, left: 72, right: 58, height: "52%" },
+          { left: 72, right: 58, top: "68%", height: "18%" },
         ],
         xAxis: [
           {
@@ -667,7 +699,9 @@ export default {
             gridIndex: 1,
             axisLabel: {
               color: this.defaultLabelColor,
-              formatter: (value) => this.formatNum(value),
+              fontSize: 9,
+              margin: 8,
+              formatter: (value) => this.formatVolumeAxis(value),
             },
             splitLine: { show: false },
           },
@@ -690,6 +724,32 @@ export default {
             xAxisIndex: 1,
             yAxisIndex: 1,
             data: volumeData,
+          },
+        ],
+        dataZoom: [
+          {
+            type: "inside",
+            xAxisIndex: [0, 1],
+            filterMode: "none",
+            start: 0,
+            end: 100,
+            zoomOnMouseWheel: true,
+            moveOnMouseMove: true,
+          },
+          {
+            type: "slider",
+            xAxisIndex: [0, 1],
+            filterMode: "none",
+            start: 0,
+            end: 100,
+            bottom: 0,
+            height: 18,
+            showDetail: false,
+            showDataShadow: false,
+            borderColor: "#dcdfe6",
+            fillerColor: "rgba(64, 158, 255, 0.18)",
+            handleStyle: { color: "#409eff" },
+            textStyle: { color: "#909399", fontSize: 10 },
           },
         ],
       };
@@ -855,7 +915,7 @@ export default {
 }
 .main-echarts {
   width: 100%;
-  height: 290px;
+  height: 310px;
 }
 .chart-state {
   position: absolute;
@@ -867,9 +927,9 @@ export default {
   font-size: 12px;
 }
 .mini-charts {
-  height: 270px;
+  height: 290px;
 }
 .mini-stage {
-  min-height: 270px;
+  min-height: 290px;
 }
 </style>
