@@ -125,6 +125,23 @@ export default {
       }
       return String(Math.round(num));
     },
+    calculateMovingAverage(dataList, period) {
+      var sum = 0;
+      return dataList.map((item, index) => {
+        var close = Number(item[2]);
+        if (!Number.isFinite(close)) {
+          return null;
+        }
+        sum += close;
+        if (index >= period) {
+          sum -= Number(dataList[index - period][2]) || 0;
+        }
+        if (index < period - 1) {
+          return null;
+        }
+        return Number((sum / period).toFixed(2));
+      });
+    },
     init(val) {
       this.boxShadow = true;
       this.code = val.f13 + "." + val.f12;
@@ -643,6 +660,9 @@ export default {
       this.errorMessage = "";
       this.dataList = dataList;
       var dates = dataList.map((item) => item[0]);
+      var ma5 = this.calculateMovingAverage(dataList, 5);
+      var ma10 = this.calculateMovingAverage(dataList, 10);
+      var ma20 = this.calculateMovingAverage(dataList, 20);
       var candleData = dataList.map((item) => [
         +item[1],
         +item[2],
@@ -663,11 +683,33 @@ export default {
           formatter: (params) => {
             var index = params[0].dataIndex;
             var item = dataList[index];
-            return `日期：${item[0]}<br />开盘：${item[1]}<br />收盘：${item[2]}<br />最高：${item[3]}<br />最低：${item[4]}<br />涨跌幅：${item[8]}%<br />成交量：${this.formatNum(item[5])}`;
+            var lines = [
+              `日期：${item[0]}`,
+              `开盘：${item[1]}`,
+              `收盘：${item[2]}`,
+              `最高：${item[3]}`,
+              `最低：${item[4]}`,
+              `涨跌幅：${item[8]}%`,
+              `成交量：${this.formatNum(item[5])}`,
+            ];
+            params.forEach((param) => {
+              if (param.seriesName && /^MA/.test(param.seriesName) && param.value != null) {
+                lines.push(`${param.seriesName}：${param.value}`);
+              }
+            });
+            return lines.join("<br />");
           },
         },
+        legend: {
+          top: 0,
+          left: "center",
+          itemWidth: 14,
+          itemHeight: 8,
+          textStyle: { color: this.defaultLabelColor, fontSize: 10 },
+          data: ["价格", "MA5", "MA10", "MA20"],
+        },
         grid: [
-          { top: 20, left: 72, right: 58, height: "52%" },
+          { top: 30, left: 72, right: 58, height: "49%" },
           { left: 72, right: 58, top: "68%", height: "18%" },
         ],
         xAxis: [
@@ -719,6 +761,30 @@ export default {
             },
           },
           {
+            name: "MA5",
+            type: "line",
+            data: ma5,
+            symbol: "none",
+            connectNulls: false,
+            lineStyle: { width: 1, color: "#409eff" },
+          },
+          {
+            name: "MA10",
+            type: "line",
+            data: ma10,
+            symbol: "none",
+            connectNulls: false,
+            lineStyle: { width: 1, color: "#e6a23c" },
+          },
+          {
+            name: "MA20",
+            type: "line",
+            data: ma20,
+            symbol: "none",
+            connectNulls: false,
+            lineStyle: { width: 1, color: "#9b59b6" },
+          },
+          {
             name: "成交量",
             type: "bar",
             xAxisIndex: 1,
@@ -731,7 +797,9 @@ export default {
             type: "inside",
             xAxisIndex: [0, 1],
             filterMode: "none",
-            start: 0,
+            start: this.chartPeriod === "day" && dataList.length > 30
+              ? ((dataList.length - 30) / dataList.length) * 100
+              : 0,
             end: 100,
             zoomOnMouseWheel: true,
             moveOnMouseMove: true,
@@ -740,7 +808,9 @@ export default {
             type: "slider",
             xAxisIndex: [0, 1],
             filterMode: "none",
-            start: 0,
+            start: this.chartPeriod === "day" && dataList.length > 30
+              ? ((dataList.length - 30) / dataList.length) * 100
+              : 0,
             end: 100,
             bottom: 0,
             height: 18,
