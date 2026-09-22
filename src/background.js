@@ -494,7 +494,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type == "fetchJson") {
     requestJson(request.url)
       .then((result) => sendResponse({ ok: true, data: result.data, source: result.source }))
-      .catch((error) => sendResponse({ ok: false, error: error.message }));
+      .catch((error) => {
+        console.warn("[market-request] failed", request.url, error);
+        sendResponse({ ok: false, error: error.message });
+      });
     return true;
   }
   if (request.type == "DuringDate") {
