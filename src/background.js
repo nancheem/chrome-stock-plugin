@@ -1,5 +1,3 @@
-import axios from "axios";
-
 var Interval;
 var holiday;
 var RealtimeFundcode = null;
@@ -9,6 +7,16 @@ var showBadge = 1;
 var BadgeContent = 1;
 var BadgeType = 1;
 var userId = null;
+
+// MV3 uses chrome.action in place of the removed browserAction namespace.
+var actionApi = chrome.action || chrome.browserAction;
+
+var requestJson = url => fetch(url).then(response => {
+  if (!response.ok) {
+    throw new Error("Request failed: " + response.status);
+  }
+  return response.json().then(data => ({ data }));
+});
 
 var getGuid = () => {
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (
@@ -20,8 +28,8 @@ var getGuid = () => {
   });
 }
 var getHoliday = () => {
-  let url = "http://x2rr.github.io/funds/holiday.json";
-  return axios.get(url);
+  let url = "https://x2rr.github.io/funds/holiday.json";
+  return requestJson(url);
 };
 var checkHoliday = date => {
   var nowMonth = date.getMonth() + 1;
@@ -135,11 +143,11 @@ var setBadge = (fundcode, Realtime, type) => {
       fundcode +
       "&_=" +
       new Date().getTime();
-    axios.get(url).then((res) => {
+    requestJson(url).then((res) => {
       let data = res.data.data.diff;
       let text = data[0].f3.toString();
       let num = data[0].f3;
-      chrome.browserAction.setBadgeText({
+      actionApi.setBadgeText({
         text: text
       });
       let color = Realtime ?
@@ -147,7 +155,7 @@ var setBadge = (fundcode, Realtime, type) => {
         "#F56C6C" :
         "#4eb61b" :
         "#4285f4";
-      chrome.browserAction.setBadgeBackgroundColor({
+      actionApi.setBadgeBackgroundColor({
         color: color
       });
     });
@@ -161,8 +169,7 @@ var setBadge = (fundcode, Realtime, type) => {
     let url =
       "https://fundmobapi.eastmoney.com/FundMNewApi/FundMNFInfo?pageIndex=1&pageSize=200&plat=Android&appType=ttjj&product=EFund&Version=1&deviceid=" + userId + "&Fcodes=" +
       fundStr;
-    axios
-      .get(url)
+    requestJson(url)
       .then((res) => {
         let allAmount = 0;
         let allGains = 0;
@@ -256,7 +263,7 @@ var setBadge = (fundcode, Realtime, type) => {
         }
 
 
-        chrome.browserAction.setBadgeText({
+        actionApi.setBadgeText({
           text: textStr
         });
         let color = Realtime ?
@@ -264,7 +271,7 @@ var setBadge = (fundcode, Realtime, type) => {
           "#F56C6C" :
           "#4eb61b" :
           "#4285f4";
-        chrome.browserAction.setBadgeBackgroundColor({
+        actionApi.setBadgeBackgroundColor({
           color: color
         });
 
@@ -292,7 +299,7 @@ var startInterval = (RealtimeFundcode, type = 1) => {
     if (isDuringDate()) {
       setBadge(RealtimeFundcode, true, type);
     } else {
-      chrome.browserAction.setBadgeBackgroundColor({
+      actionApi.setBadgeBackgroundColor({
         color: "#4285f4"
       });
     }
@@ -301,7 +308,7 @@ var startInterval = (RealtimeFundcode, type = 1) => {
 
 var endInterval = () => {
   clearInterval(Interval);
-  chrome.browserAction.setBadgeText({
+  actionApi.setBadgeText({
     text: ""
   });
 };
@@ -377,7 +384,7 @@ getData();
 
 chrome.contextMenus.create({
   title: "以独立窗口模式打开",
-  contexts: ["browser_action"],
+  contexts: ["action"],
   onclick: () => {
     chrome.windows.create({
       url: chrome.runtime.getURL("popup/popup.html"),
@@ -446,7 +453,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       sumNum = allGains;
     }
 
-    chrome.browserAction.setBadgeText({
+    actionApi.setBadgeText({
       text: textStr
     });
     let color = isDuringDate() ?
@@ -454,7 +461,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       "#F56C6C" :
       "#4eb61b" :
       "#4285f4";
-    chrome.browserAction.setBadgeBackgroundColor({
+    actionApi.setBadgeBackgroundColor({
       color: color
     });
   }
@@ -488,7 +495,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       num = request.data.gains;
       textstr = formatNum(request.data.gains);
     }
-    chrome.browserAction.setBadgeText({
+    actionApi.setBadgeText({
       text: textstr
     });
     let color = isDuringDate() ?
@@ -496,7 +503,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       "#F56C6C" :
       "#4eb61b" :
       "#4285f4";
-    chrome.browserAction.setBadgeBackgroundColor({
+    actionApi.setBadgeBackgroundColor({
       color: color
     });
   }

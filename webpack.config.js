@@ -12,6 +12,9 @@ const {
 
 const config = {
   mode: process.env.NODE_ENV,
+  // MV3 forbids eval-based extension pages. Avoid webpack's development
+  // default so development builds remain loadable by Chrome.
+  devtool: process.env.NODE_ENV === 'development' ? 'cheap-module-source-map' : false,
   context: __dirname + '/src',
   entry: {
     'background': './background.js',
@@ -98,12 +101,6 @@ const config = {
         transform: (content) => {
           const jsonContent = JSON.parse(content);
           jsonContent.version = version;
-
-          if (config.mode === 'development') {
-            //   jsonContent['content_security_policy'] = "script-src 'self' 'unsafe-eval'; object-src 'self'";
-            //   jsonContent['content_security_policy'] ="script-src 'self' https://jic.talkingdata.com; object-src 'self'";
-            jsonContent['content_security_policy'] = "script-src 'self' 'unsafe-eval' https://jic.talkingdata.com; object-src 'self'";
-          }
 
           return JSON.stringify(jsonContent, null, 2);
         },
