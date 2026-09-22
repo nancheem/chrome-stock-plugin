@@ -125,6 +125,65 @@ export default {
       }
       return String(Math.round(num));
     },
+    formatTooltipNumber(value) {
+      var num = Number(value);
+      return Number.isFinite(num) ? num.toFixed(2) : "--";
+    },
+    formatTooltipVolume(value) {
+      var num = Number(value);
+      if (!Number.isFinite(num)) {
+        return "--";
+      }
+      var abs = Math.abs(num);
+      if (abs >= 100000000) {
+        return (num / 100000000).toFixed(2) + "亿手";
+      }
+      if (abs >= 10000) {
+        return (num / 10000).toFixed(2) + "万手";
+      }
+      return Math.round(num) + "手";
+    },
+    formatTooltipAmount(value) {
+      var num = Number(value);
+      if (!Number.isFinite(num)) {
+        return "--";
+      }
+      var abs = Math.abs(num);
+      if (abs >= 100000000) {
+        return (num / 100000000).toFixed(2) + "亿";
+      }
+      if (abs >= 10000) {
+        return (num / 10000).toFixed(2) + "万";
+      }
+      return this.formatTooltipNumber(num);
+    },
+    tooltipPosition(point, params, dom, rect, size) {
+      var viewWidth = size && size.viewSize ? size.viewSize[0] : 0;
+      var viewHeight = size && size.viewSize ? size.viewSize[1] : 0;
+      var contentWidth = size && size.contentSize ? size.contentSize[0] : 0;
+      var contentHeight = size && size.contentSize ? size.contentSize[1] : 0;
+      var x = point[0] + 12;
+      var y = point[1] + 12;
+      if (viewWidth && x + contentWidth > viewWidth) {
+        x = point[0] - contentWidth - 12;
+      }
+      if (viewHeight && y + contentHeight > viewHeight) {
+        y = point[1] - contentHeight - 12;
+      }
+      return [Math.max(0, x), Math.max(0, y)];
+    },
+    getKlineDefaultStart(dataLength) {
+      var visiblePoints = {
+        day: 60,
+        week: 60,
+        month: 60,
+        year: 60,
+      }[this.chartPeriod];
+      if (!visiblePoints || dataLength <= visiblePoints) {
+        return 0;
+      }
+      return ((dataLength - visiblePoints) / dataLength) * 100;
+    },
     calculateMovingAverage(dataList, period) {
       var sum = 0;
       return dataList.map((item, index) => {
@@ -176,6 +235,9 @@ export default {
       this.option = {
         tooltip: {
           trigger: "axis",
+          confine: true,
+          position: (point, params, dom, rect, size) =>
+            this.tooltipPosition(point, params, dom, rect, size),
           axisPointer: {
             type: "cross",
             label: {
@@ -679,25 +741,42 @@ export default {
         animation: false,
         tooltip: {
           trigger: "axis",
+          confine: true,
+          position: (point, params, dom, rect, size) =>
+            this.tooltipPosition(point, params, dom, rect, size),
           axisPointer: { type: "cross" },
           formatter: (params) => {
             var index = params[0].dataIndex;
             var item = dataList[index];
+            var changeColor = Number(item[9]) >= 0 ? "#f56c6c" : "#4eb61b";
             var lines = [
-              `日期：${item[0]}`,
-              `开盘：${item[1]}`,
-              `收盘：${item[2]}`,
-              `最高：${item[3]}`,
-              `最低：${item[4]}`,
-              `涨跌幅：${item[8]}%`,
-              `成交量：${this.formatNum(item[5])}`,
+              ["时间", item[0]],
+              ["开盘价", this.formatTooltipNumber(item[1])],
+              ["最高价", this.formatTooltipNumber(item[3])],
+              ["最低价", this.formatTooltipNumber(item[4])],
+              ["收盘价", this.formatTooltipNumber(item[2])],
+              [
+                "涨跌额",
+                `<span style="color:${changeColor}">${this.formatTooltipNumber(item[9])}</span>`,
+              ],
+              [
+                "涨跌幅",
+                `<span style="color:${changeColor}">${item[8] || "--"}%</span>`,
+              ],
+              ["成交量", this.formatTooltipVolume(item[5])],
+              ["成交额", this.formatTooltipAmount(item[6])],
             ];
             params.forEach((param) => {
               if (param.seriesName && /^MA/.test(param.seriesName) && param.value != null) {
-                lines.push(`${param.seriesName}：${param.value}`);
+                lines.push([param.seriesName, this.formatTooltipNumber(param.value)]);
               }
             });
-            return lines.join("<br />");
+            return `<div style="min-width:150px;line-height:20px;white-space:nowrap;">${lines
+              .map(
+                (line) =>
+                  `<div style="display:flex;justify-content:space-between;gap:16px;"><span>${line[0]}</span><strong>${line[1]}</strong></div>`
+              )
+              .join("")}</div>`;
           },
         },
         legend: {
@@ -797,9 +876,7 @@ export default {
             type: "inside",
             xAxisIndex: [0, 1],
             filterMode: "filter",
-            start: this.chartPeriod === "day" && dataList.length > 30
-              ? ((dataList.length - 30) / dataList.length) * 100
-              : 0,
+            start: this.getKlineDefaultStart(dataList.length),
             end: 100,
             zoomOnMouseWheel: true,
             moveOnMouseMove: true,
@@ -808,9 +885,7 @@ export default {
             type: "slider",
             xAxisIndex: [0, 1],
             filterMode: "filter",
-            start: this.chartPeriod === "day" && dataList.length > 30
-              ? ((dataList.length - 30) / dataList.length) * 100
-              : 0,
+            start: this.getKlineDefaultStart(dataList.length),
             end: 100,
             bottom: 0,
             height: 18,
