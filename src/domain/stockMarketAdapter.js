@@ -34,7 +34,7 @@ function normalizeSearchResult(raw) {
 }
 
 function buildIntradayUrl(instrument) {
-  return "https://push2.eastmoney.com/api/qt/stock/trends2/get?secid=" + toSecid(instrument) + "&fields1=f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11,f12,f13&fields2=f51,f53,f56,f58";
+  return "https://push2.eastmoney.com/api/qt/stock/trends2/get?secid=" + toSecid(instrument) + "&fields1=f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11,f12,f13&fields2=f51,f53,f56,f57,f58";
 }
 
 function buildKlineUrl(instrument, period) {

@@ -157,6 +157,18 @@ export default {
       }
       return this.formatTooltipNumber(num);
     },
+    renderTooltipRows(rows) {
+      var dark = this.darkMode;
+      var background = dark ? "rgba(35, 39, 47, 0.96)" : "rgba(255, 255, 255, 0.98)";
+      var color = dark ? "#e5e7eb" : "#606266";
+      var border = dark ? "1px solid rgba(255,255,255,0.16)" : "1px solid #ebeef5";
+      return `<div style="min-width:158px;padding:7px 10px;border:${border};border-radius:4px;background:${background};box-shadow:0 3px 12px rgba(0,0,0,0.18);color:${color};font-size:12px;line-height:20px;white-space:nowrap;">${rows
+        .map(
+          (row) =>
+            `<div style="display:flex;align-items:center;justify-content:space-between;gap:18px;"><span>${row[0]}</span><strong style="font-weight:500;color:${dark ? "#f3f4f6" : "#303133"};">${row[1]}</strong></div>`
+        )
+        .join("")}</div>`;
+    },
     tooltipPosition(point, params, dom, rect, size) {
       var viewWidth = size && size.viewSize ? size.viewSize[0] : 0;
       var viewHeight = size && size.viewSize ? size.viewSize[1] : 0;
@@ -255,21 +267,30 @@ export default {
               this.dataList[p[0].dataIndex][1] >
                 this.dataList[p[0].dataIndex - 1][1]
             ) {
-              color = '#f56c6c"';
+              color = "#f56c6c";
             } else {
-              color = '#4eb61b"';
+              color = "#4eb61b";
             }
-            return `时间：${p[0].name}<br />价格：${
-              this.dataList[p[0].dataIndex][1]
-            }<br />涨幅：${(
-              ((this.dataList[p[0].dataIndex][1] - this.DWJZ) * 100) /
-              this.DWJZ
-            ).toFixed(
-              2
-            )}%<br /><span style="display:inline-block;margin-right:5px;border-radius:10px;width:10px;height:10px;background-color:${color}"></span>成交量：${this.formatNum(
-              this.dataList[p[0].dataIndex][2]
-            )}`;
+            var item = this.dataList[p[0].dataIndex];
+            var change = (((item[1] - this.DWJZ) * 100) / this.DWJZ).toFixed(2);
+            var avgPrice = item[4] || "--";
+            return this.renderTooltipRows([
+              ["时间", p[0].name],
+              ["价格", this.formatTooltipNumber(item[1])],
+              ["均价", this.formatTooltipNumber(avgPrice)],
+              ["涨幅", `<span style="color:${color}">${change}%</span>`],
+              ["成交量", this.formatTooltipVolume(item[2])],
+              ["成交额", this.formatTooltipAmount(item[3])],
+            ]);
           },
+        },
+        legend: {
+          top: 0,
+          left: "center",
+          itemWidth: 14,
+          itemHeight: 8,
+          textStyle: { color: this.defaultLabelColor, fontSize: 10 },
+          data: ["价格", "均价"],
         },
         axisPointer: {
           link: { xAxisIndex: "all" },
@@ -302,7 +323,7 @@ export default {
         ],
         grid: [
           {
-            top: 20,
+            top: 26,
             left: 72,
             height: "50%",
           },
@@ -461,7 +482,7 @@ export default {
         ],
         series: [
           {
-            name: "涨幅",
+            name: "价格",
             type: "line",
             data: [],
             markLine: {
@@ -482,7 +503,7 @@ export default {
             },
           },
           {
-            name: "价格",
+            name: "价格(%)",
             type: "line",
             yAxisIndex: 1,
             symbol: "none",
@@ -490,6 +511,19 @@ export default {
             lineStyle: {
               normal: {
                 width: 0,
+              },
+            },
+          },
+          {
+            name: "均价",
+            type: "line",
+            yAxisIndex: 1,
+            symbol: "none",
+            data: [],
+            lineStyle: {
+              normal: {
+                width: 1,
+                color: "#e6a23c",
               },
             },
           },
@@ -602,7 +636,7 @@ export default {
       this.loading = true;
       this.errorMessage = "";
       this.dataList = [];
-      let url = `https://push2.eastmoney.com/api/qt/stock/trends2/get?secid=${this.code}&fields1=f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11,f12,f13&fields2=f51,f53,f56,f58&iscr=0&iscca=0&ndays=1&forcect=1`;
+      let url = `https://push2.eastmoney.com/api/qt/stock/trends2/get?secid=${this.code}&fields1=f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11,f12,f13&fields2=f51,f53,f56,f57,f58&iscr=0&iscca=0&ndays=1&forcect=1`;
 
       this.requestJson(url).then((res) => {
         var payload = res.data && res.data.data;
@@ -615,7 +649,8 @@ export default {
 
         this.option.series[0].data = dataList.map((item) => +item[1]);
         this.option.series[1].data = dataList.map((item) => +item[1]);
-        this.option.series[2].data = dataList.map((item) => +item[2]);
+        this.option.series[2].data = dataList.map((item) => +item[4]);
+        this.option.series[3].data = dataList.map((item) => +item[2]);
 
         let firstDate = dataList[0][0].substr(11, 5);
         // console.log(firstDate);
@@ -771,12 +806,7 @@ export default {
                 lines.push([param.seriesName, this.formatTooltipNumber(param.value)]);
               }
             });
-            return `<div style="min-width:150px;line-height:20px;white-space:nowrap;">${lines
-              .map(
-                (line) =>
-                  `<div style="display:flex;justify-content:space-between;gap:16px;"><span>${line[0]}</span><strong>${line[1]}</strong></div>`
-              )
-              .join("")}</div>`;
+            return this.renderTooltipRows(lines);
           },
         },
         legend: {
