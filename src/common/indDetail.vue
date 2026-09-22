@@ -11,15 +11,24 @@
           <el-radio-button label="year">年</el-radio-button>
         </el-radio-group>
       </div>
-      <div
-        v-loading="loading"
-        :element-loading-background="
-          darkMode ? 'rgba(0, 0, 0, 0.9)' : 'rgba(255, 255, 255, 0.9)'
-        "
-        :class="mini ? 'mini-charts' : ''"
-        class="main-echarts"
-        ref="mainCharts"
-      ></div>
+      <div class="chart-stage" :class="mini ? 'mini-stage' : ''">
+        <div
+          v-loading="loading"
+          :element-loading-background="
+            darkMode ? 'rgba(0, 0, 0, 0.9)' : 'rgba(255, 255, 255, 0.9)'
+          "
+          :class="mini ? 'mini-charts' : ''"
+          class="main-echarts"
+          ref="mainCharts"
+        ></div>
+        <div v-if="errorMessage" class="chart-state">
+          <span>{{ errorMessage }}</span>
+          <input class="btn" type="button" value="重试" @click="retryData" />
+        </div>
+        <div v-else-if="!loading && !dataList.length" class="chart-state">
+          暂无行情数据
+        </div>
+      </div>
 
       <div class="tab-row">
         <input class="btn" type="button" value="返回列表" @click="close" />
@@ -65,6 +74,7 @@ export default {
       codeData: {},
       boxShadow: false,
       loading: false,
+      errorMessage: "",
       dataList: [],
       timeData: [],
       isHK: false,
@@ -107,6 +117,8 @@ export default {
       this.code = val.f13 + "." + val.f12;
       this.codeData = val;
       this.chartPeriod = "intraday";
+      this.errorMessage = "";
+      this.dataList = [];
 
       setTimeout(() => {
         this.initChart();
@@ -396,6 +408,10 @@ export default {
         this.initChart();
       }
     },
+    retryData() {
+      this.errorMessage = "";
+      this.getData();
+    },
     fmtAxis(val, ind) {
       if (this.isHK) {
         if (val == "12:00") {
@@ -458,13 +474,17 @@ export default {
     },
     getIntradayData() {
       this.loading = true;
+      this.errorMessage = "";
+      this.dataList = [];
       let url = `https://push2.eastmoney.com/api/qt/stock/trends2/get?secid=${this.code}&fields1=f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11,f12,f13&fields2=f51,f53,f56,f58&iscr=0&iscca=0&ndays=1&forcect=1`;
 
       this.$axios.get(url).then((res) => {
-        // console.log(res);
-        this.loading = false;
-        this.DWJZ = res.data.data.prePrice;
-        let dataList = res.data.data.trends.map((item) => item.split(","));
+        var payload = res.data && res.data.data;
+        if (!payload || !Array.isArray(payload.trends) || !payload.trends.length) {
+          throw new Error("empty intraday data");
+        }
+        this.DWJZ = Number(payload.prePrice);
+        let dataList = payload.trends.map((item) => item.split(","));
         this.dataList = dataList;
 
         this.option.series[0].data = dataList.map((item) => +item[1]);
@@ -527,10 +547,16 @@ export default {
         this.option.yAxis[1].max = maxVal;
         this.option.yAxis[1].interval = Math.abs((this.DWJZ - minVal) / 4);
         this.myChart.setOption(this.option);
+      }).catch(() => {
+        this.setChartError("行情加载失败，请检查网络后重试");
+      }).then(() => {
+        this.loading = false;
       });
     },
     getKlineData() {
       this.loading = true;
+      this.errorMessage = "";
+      this.dataList = [];
       var periodMap = {
         day: "101",
         week: "102",
@@ -544,8 +570,7 @@ export default {
         .then((res) => {
           var klines = res.data && res.data.data && res.data.data.klines;
           if (!klines || !klines.length) {
-            this.dataList = [];
-            this.myChart.clear();
+            this.setChartError("暂无该周期行情数据");
             return;
           }
           var pointLimit = {
@@ -560,14 +585,14 @@ export default {
           this.renderKline(klines.map((item) => item.split(",")));
         })
         .catch(() => {
-          this.dataList = [];
-          this.myChart.clear();
+          this.setChartError("行情加载失败，请检查网络后重试");
         })
         .then(() => {
           this.loading = false;
         });
     },
     renderKline(dataList) {
+      this.errorMessage = "";
       this.dataList = dataList;
       var dates = dataList.map((item) => item[0]);
       var candleData = dataList.map((item) => [
@@ -654,6 +679,13 @@ export default {
       };
       this.myChart.clear();
       this.myChart.setOption(this.option);
+    },
+    setChartError(message) {
+      this.errorMessage = message;
+      this.dataList = [];
+      if (this.myChart) {
+        this.myChart.clear();
+      }
     },
     time_arr(type) {
       if (type.indexOf("us-s") != -1) {
@@ -781,11 +813,26 @@ export default {
 .chart-tabs {
   margin-bottom: 4px;
 }
+.chart-stage {
+  position: relative;
+  min-height: 330px;
+}
 .main-echarts {
   width: 100%;
   height: 330px;
 }
+.chart-state {
+  position: absolute;
+  top: 45%;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  color: #909399;
+}
 .mini-charts {
   height: 305px;
+}
+.mini-stage {
+  min-height: 305px;
 }
 </style>

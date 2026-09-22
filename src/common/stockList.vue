@@ -24,11 +24,15 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="row in rows" :key="row.instrument.id" :class="isEdit ? 'table-drag' : ''">
+        <tr
+          v-for="row in rows"
+          :key="row.instrument.id"
+          :class="isEdit ? '' : 'stock-row-clickable'"
+          @click.stop="!isEdit && openDetail(row)"
+        >
           <td
             :class="isEdit ? 'fundName-noclick align-left' : 'fundName align-left'"
             :title="row.quote.name || row.instrument.symbol"
-            @click.stop="!isEdit && openDetail(row)"
           >{{ row.quote.name || row.instrument.symbol }}</td>
           <td v-if="isEdit">{{ row.instrument.symbol }}</td>
           <td>{{ display(row.quote.last) }}</td>
@@ -200,7 +204,7 @@ export default {
 .fundName { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; user-select: none; }
 .fundName-noclick { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fundName:hover { color: #409eff; }
-.table-drag { cursor: move; }
+.stock-row-clickable { cursor: pointer; }
 .up { color: #f56c6c; font-weight: bold; }
 .down { color: #4eb61b; font-weight: bold; }
 .empty { margin: 0; text-align: center; padding: 30px 0; color: #909399; }
