@@ -155,21 +155,18 @@ export default {
       this.$emit("open-detail", row);
     },
     requestJson(url) {
-      return this.$axios.get(url).catch((error) => {
+      if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.sendMessage) {
         return new Promise((resolve, reject) => {
-          if (typeof chrome === "undefined" || !chrome.runtime || !chrome.runtime.sendMessage) {
-            reject(error);
-            return;
-          }
           chrome.runtime.sendMessage({ type: "fetchJson", url: url }, (response) => {
             if (chrome.runtime.lastError || !response || !response.ok) {
-              reject(error);
+              reject(new Error((response && response.error) || "后台行情请求失败"));
               return;
             }
             resolve({ data: response.data });
           });
         });
-      });
+      }
+      return this.$axios.get(url);
     },
     refresh() {
       var items = this.stockItems();

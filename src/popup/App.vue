@@ -1389,8 +1389,11 @@ tbody tr:hover {
 }
 
 .detail-container {
+  width: 610px;
+  height: 450px;
   min-height: 450px;
   min-width: 610px;
+  box-sizing: border-box;
 }
 
 .detailTable {

@@ -473,21 +473,18 @@ export default {
       }
     },
     requestJson(url) {
-      return this.$axios.get(url).catch((error) => {
+      if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.sendMessage) {
         return new Promise((resolve, reject) => {
-          if (typeof chrome === "undefined" || !chrome.runtime || !chrome.runtime.sendMessage) {
-            reject(error);
-            return;
-          }
           chrome.runtime.sendMessage({ type: "fetchJson", url: url }, (response) => {
             if (chrome.runtime.lastError || !response || !response.ok) {
-              reject(error);
+              reject(new Error((response && response.error) || "后台行情请求失败"));
               return;
             }
             resolve({ data: response.data });
           });
         });
-      });
+      }
+      return this.$axios.get(url);
     },
     getIntradayData() {
       this.loading = true;
@@ -772,27 +769,36 @@ export default {
   position: absolute;
   width: 100%;
   height: 100%;
-  padding: 20px;
+  padding: 14px;
   z-index: 1001;
   box-sizing: border-box;
   top: 0;
   left: 0;
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: rgba(17, 24, 39, 0.72);
+  overflow: hidden;
 }
 
 .content-box {
   width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   box-sizing: border-box;
   background: #ffffff;
   border-radius: 15px;
-  padding: 0 10px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.22);
+  padding: 0 12px;
   margin: 0 auto;
   text-align: center;
   line-height: 1;
   vertical-align: middle;
   h5 {
     margin: 0;
-    padding: 13px;
+    padding: 12px 8px 7px;
+    color: #1f2937;
+    font-size: 13px;
+    font-weight: 600;
   }
 }
 
@@ -818,6 +824,10 @@ export default {
 .shadow.darkMode {
   .content-box {
     background-color: #373737;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+    h5 {
+      color: rgba($color: #ffffff, $alpha: 0.86);
+    }
   }
   .btn {
     background-color: rgba($color: #ffffff, $alpha: 0.16);
@@ -826,18 +836,23 @@ export default {
   }
 }
 .tab-row {
-  padding: 12px 0;
+  display: flex;
+  justify-content: center;
+  padding: 9px 0;
 }
 .chart-tabs {
-  margin-bottom: 4px;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 6px;
 }
 .chart-stage {
   position: relative;
-  min-height: 330px;
+  flex: 1;
+  min-height: 0;
 }
 .main-echarts {
   width: 100%;
-  height: 330px;
+  height: 290px;
 }
 .chart-state {
   position: absolute;
@@ -846,11 +861,12 @@ export default {
   width: 100%;
   text-align: center;
   color: #909399;
+  font-size: 12px;
 }
 .mini-charts {
-  height: 305px;
+  height: 270px;
 }
 .mini-stage {
-  min-height: 305px;
+  min-height: 270px;
 }
 </style>
