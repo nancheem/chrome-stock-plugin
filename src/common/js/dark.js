@@ -1,4 +1,4 @@
-import echarts from 'echarts/lib/echarts';
+var echarts = require('echarts/lib/echarts');
 
 function registerTheme() {
 var log = function (msg) {
