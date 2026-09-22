@@ -54,6 +54,7 @@ var quote = stockMarket.normalizeQuote({
 }, "2026-09-22T02:00:00.000Z");
 assert.strictEqual(stockMarket.toSecid({ market: "SZ", symbol: "000001", assetType: "STOCK" }), "0.000001");
 assert.ok(stockMarket.buildSearchUrl("平安银行").indexOf(encodeURIComponent("平安银行")) !== -1);
+assert.ok(stockMarket.buildSearchUrl("600").indexOf("count=20") !== -1);
 assert.strictEqual(stockMarket.normalizeSearchResult({ Code: "600900", Name: "长江电力", MktNum: "1" }).id, "STOCK.SH.600900");
 assert.strictEqual(stockMarket.normalizeSearchResult({ Code: "000001", Name: "平安银行", MktNum: "0" }).id, "STOCK.SZ.000001");
 assert.ok(stockMarket.buildIntradayUrl({ market: "SZ", symbol: "000001", assetType: "STOCK" }).indexOf("secid=0.000001") !== -1);

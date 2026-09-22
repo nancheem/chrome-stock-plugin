@@ -18,7 +18,7 @@ function buildQuoteUrl(instruments) {
 }
 
 function buildSearchUrl(query) {
-  return "https://searchapi.eastmoney.com/api/suggest/get?input=" + encodeURIComponent(query || "") + "&type=14";
+  return "https://searchapi.eastmoney.com/api/suggest/get?input=" + encodeURIComponent(query || "") + "&type=14&count=20";
 }
 
 function normalizeSearchResult(raw) {
