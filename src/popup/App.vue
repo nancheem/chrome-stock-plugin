@@ -558,10 +558,7 @@ export default {
           this.getIndFundData();
           this.checkInterval(true);
 
-          let ver = res.version ? res.version : "1.0.0";
-          if (ver != this.localVersion) {
-            this.changelog();
-          }
+          // 不再在启动时自动弹出更新日志，避免遮挡股票列表。
         }
       );
     },
