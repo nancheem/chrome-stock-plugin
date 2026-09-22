@@ -131,7 +131,6 @@
         @click="isEdit = !isEdit"
       />
       <input class="btn" type="button" value="设置" @click="option" />
-      <input class="btn" type="button" value="日志" @click="changelog" />
       <input
         class="btn primary"
         type="button"
@@ -198,21 +197,13 @@
       ref="fundDetail"
     ></fund-detail>
     <reward @close="rewardShadow = false" ref="reward"></reward>
-    <change-log
-      @close="closeChangelog"
-      :darkMode="darkMode"
-      ref="changelog"
-      :top="30"
-    ></change-log>
   </div>
 </template>
 
 <script>
-const { version } = require("../../package.json");
 import reward from "../common/reward";
 import indDetail from "../common/indDetail";
 import fundDetail from "../common/fundDetail";
-import changeLog from "../common/changeLog";
 import market from "../common/market";
 import stockList from "../common/stockList";
 //防抖
@@ -227,7 +218,6 @@ export default {
     reward,
     fundDetail,
     indDetail,
-    changeLog,
     market,
     stockList,
   },
@@ -321,10 +311,8 @@ export default {
       containerWidth: 790,
       containerHeight: 590,
       detailShadow: false,
-      changelogShadow: false,
       sltFund: {},
       sltIndCode: "",
-      localVersion: version,
       BadgeContent: 1,
       showBadge: 1,
       userId: null,
@@ -388,9 +376,7 @@ export default {
       if (this.darkMode) {
         className += "darkMode ";
       }
-      if (this.changelogShadow) {
-        className += "changelog-container";
-      } else if (this.rewardShadow) {
+      if (this.rewardShadow) {
         className += "more-height";
       } else if (this.detailShadow) {
         className += "detail-container";
@@ -495,7 +481,6 @@ export default {
           "showCost",
           "showCostRate",
           "showGSZ",
-          "version",
           "showBadge",
           "BadgeContent",
           "userId",
@@ -643,16 +628,6 @@ export default {
     reward() {
       this.rewardShadow = true;
       this.$refs.reward.init();
-    },
-    changelog() {
-      this.changelogShadow = true;
-      this.$refs.changelog.init();
-    },
-    closeChangelog() {
-      this.changelogShadow = false;
-      chrome.storage.sync.set({
-        version: this.localVersion,
-      });
     },
     sortList(type) {
       for (const key in this.sortType) {
@@ -1119,11 +1094,6 @@ export default {
 
 .more-width {
   min-width: 785px;
-}
-
-.changelog-container {
-  min-height: 575px;
-  min-width: 550px;
 }
 
 .table-more-height {
